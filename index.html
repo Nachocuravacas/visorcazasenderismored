@@ -131,8 +131,12 @@
     <div id="msgCyl" style="font-size:12px; margin-bottom:8px; font-weight:bold; color:#2563eb;">Esperando cambio de pestaña...</div>
 
     <label style="display:block; font-size:13px; font-weight:bold; margin:6px 0 4px; color:#1e293b;">
-      Pegar tabla de la Junta (<a href="https://jcyl.es" target="_blank" style="color:#2563eb; text-decoration:underline;">abrir web</a>):
+          <label style="display:block; font-size:13px; font-weight:bold; margin:6px 0 4px; color:#1e293b;">
+      Pegar tabla de la Junta (<script>
+        document.write('<a href="https://servicios.' + 'jcyl.es/emcc/buscadorCacerias.action" target="_blank" style="color:#2563eb; text-decoration:underline;">abrir web</a>');
+      </script>):
     </label>
+
     <textarea id="txtTablaCyl" rows="4" placeholder="Copia y pega aquí las filas de la web de la Junta..." style="width:100%; padding:7px; border-radius:4px; border:1px solid #cbd5e1; font-size:11px; font-family:sans-serif; box-sizing:border-box; resize:vertical;"></textarea>
 
     <button type="button" onclick="procesarTablaCyl()" style="width:100%; margin-top:8px; padding:9px; background:#2563eb; color:#ffffff; border:none; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(37,99,235,0.3);">MOSTRAR COTOS EN EL MAPA</button>
