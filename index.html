@@ -1052,28 +1052,27 @@ function cambiarComunidad(com) {
     if (pCant) pCant.style.display = 'none';
     if (pCyl) pCyl.style.display = 'block';
 
-    if (capaCotosCantabria && map.hasLayer(capaCotosCantabria)) map.removeLayer(capaCotosCantabria);
-    if (capaZonasCantabria && map.hasLayer(capaZonasCantabria)) map.removeLayer(capaZonasCantabria);
-
     if (!cylCargado) {
       cargarCotosCyl();
-    } else if (capaCotosCyl) {
+    } else if (capaCotosCyl && !map.hasLayer(capaCotosCyl)) {
       capaCotosCyl.addTo(map);
     }
-    map.setView([42.35, -4.60], 8);
+    map.setView([42.65, -4.30], 8);
   } else {
     if (btnCant) { btnCant.style.background = '#2563eb'; btnCant.style.color = '#ffffff'; }
     if (btnCyl) { btnCyl.style.background = 'transparent'; btnCyl.style.color = '#475569'; }
     if (pCyl) pCyl.style.display = 'none';
     if (pCant) pCant.style.display = 'block';
 
-    if (capaCotosCyl && map.hasLayer(capaCotosCyl)) map.removeLayer(capaCotosCyl);
-    if (capaCotosCantabria) capaCotosCantabria.addTo(map);
-    if (capaZonasCantabria) { capaZonasCantabria.addTo(map); capaZonasCantabria.bringToFront(); }
+    if (capaCotosCantabria && !map.hasLayer(capaCotosCantabria)) capaCotosCantabria.addTo(map);
+    if (capaZonasCantabria) {
+      if (!map.hasLayer(capaZonasCantabria)) capaZonasCantabria.addTo(map);
+      capaZonasCantabria.bringToFront();
+    }
     map.setView([43.16, -3.72], 9);
   }
-  if (window.coordsRutaActual) evaluarRutaGpx();
 }
+
 
 function obtenerMatCyl(p) {
   if (!p) return '';
@@ -1171,13 +1170,7 @@ map.on('popupclose', function(e) {
 });
 
 // Ampliar el comprobador de rutas GPX para que funcione también en Castilla y León
-var evaluarRutaGpxOriginal = evaluarRutaGpx;
 evaluarRutaGpx = function() {
-  if (comunidadActiva !== 'cyl') {
-    evaluarRutaGpxOriginal();
-    return;
-  }
-
   var coords = window.coordsRutaActual;
   if (!coords || coords.length === 0) return;
 
@@ -1188,6 +1181,54 @@ evaluarRutaGpx = function() {
   var zonasAfectadas = new Array();
   var todosLosPoligonos = new Array();
 
+  // 1. Revisar Cotos de Cantabria
+  if (capaCotosCantabria) {
+    capaCotosCantabria.eachLayer(function(layer) {
+      todosLosPoligonos.push(layer.feature.geometry);
+      var elSel = document.getElementById('selFecha');
+      var fs = elSel ? elSel.value : '';
+      var fProp = layer.feature.properties;
+      var mat = obtenerMatCantabria(fProp);
+      var activoHoy = fs && dbCantabria[fs] && dbCantabria[fs].cotos && dbCantabria[fs].cotos[mat];
+
+      if (activoHoy) {
+        var poligonoGeo = layer.feature.geometry;
+        var estaDentro = false;
+        for (var p = 0; p < coords.length; p += Math.max(1, Math.floor(coords.length / 100))) {
+          if (puntoEnPoligonoNativo(coords.at(p), poligonoGeo)) { estaDentro = true; break; }
+        }
+        if (estaDentro) {
+          zonasAfectadas.push('Cantabria - Coto ' + mat + ' (' + (fProp.NOMBRE || '') + ')');
+          L.geoJSON(layer.feature, { style: { color: '#ef4444', weight: 4, fillColor: '#ef4444', fillOpacity: 0.35 } }).addTo(capaPeligroGpx);
+        }
+      }
+    });
+  }
+
+  // 2. Revisar Zonas de Reserva de Cantabria
+  if (capaZonasCantabria) {
+    capaZonasCantabria.eachLayer(function(layer) {
+      todosLosPoligonos.push(layer.feature.geometry);
+      var elSel = document.getElementById('selFecha');
+      var fs = elSel ? elSel.value : '';
+      var loteGeo = obtenerLoteGeoCantabria(layer.feature.properties);
+      var activoHoy = fs && dbCantabria[fs] && dbCantabria[fs].lotes && dbCantabria[fs].lotes[loteGeo];
+
+      if (activoHoy) {
+        var poligonoGeo = layer.feature.geometry;
+        var estaDentro = false;
+        for (var p = 0; p < coords.length; p += Math.max(1, Math.floor(coords.length / 100))) {
+          if (puntoEnPoligonoNativo(coords.at(p), poligonoGeo)) { estaDentro = true; break; }
+        }
+        if (estaDentro) {
+          zonasAfectadas.push('Cantabria - Lote ' + loteGeo);
+          L.geoJSON(layer.feature, { style: { color: '#ef4444', weight: 4, fillColor: '#ef4444', fillOpacity: 0.35 } }).addTo(capaPeligroGpx);
+        }
+      }
+    });
+  }
+
+  // 3. Revisar Cotos de Castilla y León
   if (capaCotosCyl) {
     capaCotosCyl.eachLayer(function(layer) {
       todosLosPoligonos.push(layer.feature.geometry);
@@ -1200,11 +1241,26 @@ evaluarRutaGpx = function() {
           if (puntoEnPoligonoNativo(coords.at(i), poligonoGeo)) { estaDentro = true; break; }
         }
         if (estaDentro) {
-          zonasAfectadas.push('Coto ' + mat + ' (' + (p.nombre || p.provincia || 'CyL') + ')');
+          zonasAfectadas.push('CyL - Coto ' + mat + ' (' + (p.nombre || p.provincia || '') + ')');
           L.geoJSON(layer.feature, { style: { color: '#ef4444', weight: 4, fillColor: '#ef4444', fillOpacity: 0.35 } }).addTo(capaPeligroGpx);
         }
       }
     });
+  }
+
+  // Comprobar si la ruta sale fuera de todos los mapas cargados
+  var saleDeCotos = false;
+  if (todosLosPoligonos.length > 0) {
+    var paso = Math.max(1, Math.floor(coords.length / 80));
+    for (var k = 0; k < coords.length; k += paso) {
+      var puntoCubierto = false;
+      for (var m = 0; m < todosLosPoligonos.length; m++) {
+        if (puntoEnPoligonoNativo(coords.at(k), todosLosPoligonos.at(m))) {
+          puntoCubierto = true; break;
+        }
+      }
+      if (!puntoCubierto) { saleDeCotos = true; break; }
+    }
   }
 
   if (divAlerta) {
@@ -1217,41 +1273,45 @@ evaluarRutaGpx = function() {
     var listaModal = document.getElementById('listaCotosModal');
     var btnModal = document.getElementById('btnCerrarModalCaza');
 
-    if (todosLosPoligonos.length === 0) {
-      divAlerta.style.background = '#d97706'; divAlerta.style.border = '2px solid #b45309'; divAlerta.style.color = '#ffffff';
-      divAlerta.innerHTML = '⚠️ <b>FALTAN DATOS DE CYl</b><br>Espera a que cargue el mapa de Castilla y León.';
-    } else if (Object.keys(cotosActivosCyl).length === 0) {
-      divAlerta.style.background = '#d97706'; divAlerta.style.border = '2px solid #b45309'; divAlerta.style.color = '#ffffff';
-      divAlerta.innerHTML = '📋 <b>FALTA PEGAR LA TABLA</b><br>Pega las filas de la Junta y pulsa "Mostrar cotos en el mapa".';
-    } else if (zonasAfectadas.length > 0) {
+    if (zonasAfectadas.length > 0) {
       divAlerta.style.background = '#dc2626'; divAlerta.style.border = '2px solid #991b1b'; divAlerta.style.color = '#ffffff';
-      divAlerta.innerHTML = '🚨 <b>¡ALERTA MÁXIMA: RUTA EN PELIGRO!</b><br>El sendero atraviesa cotos con cacería:<br><ul style="margin:6px 0 0; padding-left:15px; color:#ffffff; font-weight:bold;">' +
+      divAlerta.innerHTML = '🚨 <b>¡ALERTA MÁXIMA: RUTA EN PELIGRO!</b><br>El sendero atraviesa zonas con cacería activa:<br><ul style="margin:6px 0 0; padding-left:15px; color:#ffffff; font-weight:bold;">' +
         zonasAfectadas.map(function(z) { return '<li>' + z + '</li>'; }).join('') + '</ul>';
       if (modal && cajaModal) {
         cajaModal.style.background = '#ffffff'; cajaModal.style.borderColor = '#dc2626';
         iconoModal.innerText = '🚨'; tituloModal.style.color = '#dc2626'; tituloModal.innerText = '¡RUTA EN PELIGRO DETECTADA!';
         textoModal.style.color = '#475569';
-        textoModal.innerHTML = 'El sendero que has subido cruza cotos con <b>cacerías programadas</b> en la tabla pegada:';
+        textoModal.innerHTML = 'El sendero que has subido cruza zonas con <b>cacerías o batidas activas</b>:';
         listaModal.style.display = 'block';
         listaModal.innerHTML = '<ul style="margin:0; padding-left:15px;">' + zonasAfectadas.map(function(z) { return '<li>' + z + '</li>'; }).join('') + '</ul>';
         btnModal.style.background = '#dc2626'; btnModal.style.color = '#ffffff'; btnModal.innerText = 'ENTENDIDO';
         modal.style.display = 'flex';
       }
+    } else if (saleDeCotos) {
+      divAlerta.style.background = '#d97706'; divAlerta.style.border = '2px solid #b45309'; divAlerta.style.color = '#ffffff';
+      divAlerta.innerHTML = '⚠️ <b>PRECAUCIÓN EN RUTA</b><br>Libre en los cotos activos, pero atraviesa zonas sin mapear.';
+      if (modal && cajaModal) {
+        cajaModal.style.background = '#fffbeb'; cajaModal.style.borderColor = '#d97706';
+        iconoModal.innerText = '⚠️'; tituloModal.style.color = '#b45309'; tituloModal.innerText = 'PRECAUCIÓN EN LA RUTA';
+        textoModal.style.color = '#78350f';
+        textoModal.innerHTML = 'En los cotos cargados no hay caza activa, pero <b>la ruta sale de los límites mapeados</b> (o entra en otra provincia/comunidad).';
+        listaModal.style.display = 'none'; btnModal.style.background = '#d97706'; btnModal.style.color = '#ffffff'; btnModal.innerText = 'ENTENDIDO';
+        modal.style.display = 'flex';
+      }
     } else {
       divAlerta.style.background = '#16a34a'; divAlerta.style.border = '2px solid #15803d'; divAlerta.style.color = '#ffffff';
-      divAlerta.innerHTML = '✅ <b>¡RUTA SEGURA!</b><br>Tu ruta no cruza ninguno de los cotos pegados en la tabla.';
+      divAlerta.innerHTML = '✅ <b>¡RUTA SEGURA!</b><br>Tu ruta se encuentra libre de caza en Cantabria y Castilla y León.';
       if (modal && cajaModal) {
         cajaModal.style.background = '#16a34a'; cajaModal.style.borderColor = '#14532d';
         iconoModal.innerText = '✅'; tituloModal.style.color = '#ffffff'; tituloModal.innerText = '¡RUTA LIBRE DE CAZA!';
         textoModal.style.color = '#f0fdf4';
-        textoModal.innerHTML = 'Enhorabuena, tu ruta no atraviesa ninguno de los cotos activos de la tabla.';
+        textoModal.innerHTML = 'Enhorabuena, tu ruta se encuentra libre de caza en las zonas cargadas.';
         listaModal.style.display = 'none'; btnModal.style.background = '#ffffff'; btnModal.style.color = '#15803d'; btnModal.innerText = '¡GENIAL, CERRAR AVISO!';
         modal.style.display = 'flex';
       }
     }
   }
 };
-
 </script>
 </body>
 </html>
