@@ -89,6 +89,8 @@
 
 <div id="map"></div>
 
+<button type="button" id="btnGps" onclick="localizarUsuario()" title="Ver mi ubicación GPS" style="position: fixed; top: 82px; left: 10px; z-index: 900; width: 32px; height: 32px; border-radius: 4px; border: none; background: #ffffff; color: #1e293b; font-size: 16px; cursor: pointer; box-shadow: 0 1px 5px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;">📍</button>
+
 <button type="button" id="btnTogglePanel" onclick="togglePanel()" title="Mostrar / Ocultar menú">✕</button>
 
 <div id="panelPrincipal">
@@ -943,6 +945,53 @@ function cambiarTipoMapa(tipo) {
     if (btnSat) { btnSat.style.background = '#f8fafc'; btnSat.style.color = '#475569'; btnSat.style.borderColor = '#cbd5e1'; }
   }
 }
+
+var marcadorGps = null, circuloGps = null;
+
+function localizarUsuario() {
+  var btn = document.getElementById('btnGps');
+  if (!navigator.geolocation) {
+    alert('Tu navegador o dispositivo no soporta geolocalización GPS.');
+    return;
+  }
+  if (btn) btn.innerText = '⏳';
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      if (btn) btn.innerText = '📍';
+      var lat = pos.coords.latitude;
+      var lon = pos.coords.longitude;
+      var precision = pos.coords.accuracy;
+
+      if (marcadorGps) map.removeLayer(marcadorGps);
+      if (circuloGps) map.removeLayer(circuloGps);
+
+      circuloGps = L.circle([lat, lon], {
+        radius: precision,
+        color: '#2563eb',
+        fillColor: '#3b82f6',
+        fillOpacity: 0.15,
+        weight: 1
+      }).addTo(map);
+
+      marcadorGps = L.circleMarker([lat, lon], {
+        radius: 8,
+        color: '#ffffff',
+        weight: 3,
+        fillColor: '#2563eb',
+        fillOpacity: 1
+      }).addTo(map).bindPopup('<b>📍 Estás aquí</b><br>Precisión: ±' + Math.round(precision) + ' m').openPopup();
+
+      map.setView([lat, lon], 14);
+    },
+    function(err) {
+      if (btn) btn.innerText = '📍';
+      alert('No se pudo obtener tu ubicación. Asegúrate de tener el GPS activado y dar permiso al navegador.');
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+
 </script>
 </body>
 </html>
