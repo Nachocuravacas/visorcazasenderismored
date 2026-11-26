@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visor Cotos y Zonas Cantabria 26-27</title>
+  <script>
+    document.write('<link rel="stylesheet" href="https://unpkg.' + 'com/leaflet@1.9.4/dist/leaflet.css" />');
+  </script>
+  <style>
+    .leaflet-pane, .leaflet-tile, .leaflet-marker-icon, .leaflet-marker-shadow, .leaflet-tile-container, .leaflet-pane > svg, .leaflet-pane > canvas, .leaflet-zoom-box, .leaflet-image-layer, .leaflet-layer {
+      position: absolute; left: 0; top: 0;
+    }
+    .leaflet-container {
+      overflow: hidden; position: relative; background: #ddd; outline-offset: 1px;
+      font-family: "Helvetica Neue", Arial, Helvetica, sans-serif; font-size: 12px;
+    }
+    .leaflet-tile { filter: inherit; visibility: inherit; }
+    .leaflet-tile-pane { z-index: 200; }
+    .leaflet-overlay-pane { z-index: 400; }
+    .leaflet-shadow-pane { z-index: 500; }
+    .leaflet-marker-pane { z-index: 600; }
+    .leaflet-tooltip-pane { z-index: 650; }
+    .leaflet-popup-pane { z-index: 700; }
+    .leaflet-zoom-animated { transform-origin: 0 0; }
+    .leaflet-control-container {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 800;
+    }
+    .leaflet-top { top: 10px; position: absolute; }
+    .leaflet-left { left: 10px; position: absolute; }
+    .leaflet-bottom { bottom: 10px; position: absolute; }
+    .leaflet-right { right: 10px; position: absolute; }
+    .leaflet-control {
+      pointer-events: auto; background: #fff; border-radius: 4px; box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    }
+    .leaflet-control-zoom a {
+      display: block; width: 28px; height: 28px; line-height: 28px; text-align: center;
+      text-decoration: none; color: #333; font-size: 18px; font-weight: bold; border-bottom: 1px solid #ccc;
+    }
+    .leaflet-control-zoom a:hover { background-color: #f4f4f4; }
+    .leaflet-overlay-pane svg { position: relative; max-width: none !important; max-height: none !important; }
+    .leaflet-popup { position: absolute; text-align: center; margin-bottom: 20px; }
+    .leaflet-popup-content-wrapper {
+      background: #ffffff; color: #1e293b; font-family: sans-serif; font-size: 12px; line-height: 1.4;
+      border-radius: 8px; padding: 4px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35); border: 1px solid #cbd5e1; text-align: left;
+    }
+    .leaflet-popup-content { margin: 8px 12px; min-width: 175px; }
+    .leaflet-popup-tip-container {
+      width: 40px; height: 20px; position: absolute; left: 50%; margin-left: -20px; overflow: hidden; pointer-events: none;
+    }
+    .leaflet-popup-tip {
+      background: #ffffff; width: 17px; height: 17px; padding: 1px; margin: -10px auto 0;
+      transform: rotate(45deg); box-shadow: 0 3px 14px rgba(0, 0, 0, 0.35);
+    }
+    .leaflet-popup-close-button {
+      position: absolute; top: 4px; right: 6px; color: #64748b; font: bold 16px/14px Tahoma, Verdana, sans-serif;
+      text-decoration: none; padding: 4px;
+    }
+    html, body, #map {
+      margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
+      font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+    }
+    .leaflet-pane.leaflet-paneLluvia-pane, .leaflet-pane.leaflet-paneLluvia-pane img, .leaflet-pane.leaflet-paneLluvia-pane canvas {
+      pointer-events: none !important;
+    }
+    path.leaflet-interactive { pointer-events: auto !important; cursor: pointer; }
+    #btnTogglePanel {
+      position: fixed; top: 15px; right: 15px; z-index: 1001; width: 38px; height: 38px; border-radius: 50%;
+      border: none; background: #2563eb; color: #ffffff; font-size: 16px; font-weight: bold; cursor: pointer;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35); display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, transform 0.2s;
+    }
+    #btnTogglePanel:hover { background: #1d4ed8; }
+    #panelPrincipal {
+      position: fixed; top: 15px; right: 15px; background: #ffffff; padding: 48px 15px 15px 15px;
+      border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); width: 310px; z-index: 1000;
+      max-height: 85vh; overflow-y: auto; box-sizing: border-box;
+    }
+    @media (max-width: 480px) {
+      #panelPrincipal { width: calc(100vw - 30px); max-height: 82vh; }
+    }
+    @keyframes aparecerModal {
+      from { opacity: 0; transform: scale(0.92); }
+      to { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body oncontextmenu="return false;">
+
+<div id="map"></div>
+
+<button type="button" id="btnTogglePanel" onclick="togglePanel()" title="Mostrar / Ocultar menú">✕</button>
+
+<div id="panelPrincipal">
+   <div id="panelCantabria">
+    <h3 style="margin:0 0 10px; font-size:18px; color:#1e293b;">Cotos y Zonas Cantabria 26-27</h3>
+    
+    <div id="msgCantabria" style="font-size:12px; margin-bottom:8px; font-weight:bold; color:#2563eb;">Cargando mapa y fechas...</div>
+    
+    <label style="display:block; font-size:13px; font-weight:bold; margin:6px 0 4px;">Filtrar por Fecha:</label>
+    <select id="selFecha" onchange="actualizarColoresCantabria()" style="width:100%; padding:7px; border-radius:4px; border:1px solid #ccc;">
+      <option value="">-- Cargando fechas... --</option>
+    </select>
+
+    <div style="margin-top:10px; padding-top:8px; border-top:1px solid #eee; font-size:11px; color:#334155;">
+      <div style="display:flex; align-items:center; margin-bottom:4px;">
+        <span style="display:inline-block; width:12px; height:12px; background:rgba(220,38,38,0.5); border:1px solid #991b1b; margin-right:6px;"></span>
+        <span>Coto con batida programada</span>
+      </div>
+      <div style="display:flex; align-items:center;">
+        <span style="display:inline-block; width:12px; height:12px; background:rgba(245,158,11,0.2); border:2px dashed #d97706; margin-right:6px;"></span>
+        <span>Delimitación Zona de Caza</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:10px; padding-top:10px; border-top:1px solid #eee;">
+    <label style="display:block; font-size:13px; font-weight:bold; margin-bottom:5px; color:#1e293b;">
+      Vista del mapa:
+    </label>
+    <div style="display:flex; gap:6px;">
+      <button type="button" id="btnMapaCalle" onclick="cambiarTipoMapa('calle')" style="flex:1; padding:6px; border:1px solid #2563eb; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; background:#2563eb; color:#fff;">🗺️ Mapa</button>
+      <button type="button" id="btnMapaSatelite" onclick="cambiarTipoMapa('satelite')" style="flex:1; padding:6px; border:1px solid #cbd5e1; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer; background:#f8fafc; color:#475569;">🛰️ Satélite</button>
+    </div>
+  </div>
+
+  <div style="margin-top:10px; padding-top:10px; border-top:1px solid #eee;">
+    <label style="display:block; font-size:13px; font-weight:bold; margin-bottom:4px; color:#047857;">
+      Cargar ruta GPX (Wikiloc):
+    </label>
+    <input type="file" id="fGpx" accept=".gpx" onchange="cargarGpx()" style="width:100%; font-size:11px;">
+    <div id="infoGpx" style="font-size:11px; color:#065f46; margin-top:4px; font-weight:bold;"></div>
+    <div id="alertaSeguridadGpx" style="display:none; margin-top:8px; padding:10px; border-radius:6px; font-size:12px; line-height:1.4;"></div>
+  </div>
+
+  <div style="margin-top:12px; padding-top:10px; border-top:1px solid #eee;">
+    <label style="display:flex; align-items:center; font-size:13px; font-weight:bold; cursor:pointer; color:#1d4ed8;">
+      <input type="checkbox" id="chkLluvia" onchange="actualizarCapaLluvia()" style="margin-right:6px;">
+      Previsión lluvia por horas (0-48h)
+    </label>
+    
+    <div id="panelSliderLluvia" style="display:none; margin-top:8px; background:#f8fafc; padding:8px; border-radius:6px; border:1px solid #e2e8f0;">
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; margin-bottom:6px;">
+        <span style="font-weight:bold; color:#0f172a;" id="lblHoraLluvia">Cargando horas...</span>
+        <span style="background:#dbeafe; color:#1e40af; padding:1px 6px; border-radius:10px; font-weight:bold;" id="lblOffsetLluvia">+0h</span>
+      </div>
+
+      <div style="display:flex; gap:6px; margin-bottom:8px;">
+        <button type="button" id="btnPlayLluvia" onclick="togglePlayLluvia()" style="flex:1; padding:4px 8px; background:#2563eb; color:#fff; border:none; border-radius:4px; font-size:11px; font-weight:bold; cursor:pointer;">▶ Play</button>
+        <select id="selVelLluvia" onchange="cambiarVelocidadLluvia()" style="padding:3px 6px; border-radius:4px; border:1px solid #cbd5e1; font-size:11px; background:#fff; color:#0f172a; font-weight:bold; cursor:pointer;">
+          <option value="800">1x (Normal)</option>
+          <option value="400">2x (Rápido)</option>
+          <option value="200">3x (Muy rápido)</option>
+        </select>
+      </div>
+      
+      <input type="range" id="sliderHoraLluvia" min="0" max="48" value="0" step="1" oninput="pausarSiManual(); dibujarFrameLluvia()" style="width:100%; cursor:pointer; accent-color:#2563eb;">
+      
+      <div style="display:flex; justify-content:space-between; font-size:9px; color:#64748b; margin-top:2px;">
+        <span>Ahora</span>
+        <span>+12h</span>
+        <span>+24h</span>
+        <span>+36h</span>
+        <span>+48h</span>
+      </div>
+    </div>
+
+    <div id="leyendaLluvia" style="display:none; margin-top:6px; font-size:10px; color:#475569; background:#f8fafc; padding:5px; border-radius:4px; border:1px solid #e2e8f0;"></div>
+  </div>
+</div>
+
+<div id="modalAlertaCaza" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
+  <div id="cajaModalCaza" style="background: #ffffff; width: 90%; max-width: 440px; padding: 24px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); border: 3px solid #dc2626; text-align: center; position: relative; animation: aparecerModal 0.25s ease-out;">
+    <div id="iconoModalCaza" style="font-size: 42px; margin-bottom: 10px;">🚨</div>
+    <h2 id="tituloModalCaza" style="margin: 0 0 12px; color: #dc2626; font-size: 20px; font-weight: 800;">¡RUTA EN PELIGRO DETECTADA!</h2>
+    <p id="textoModalCaza" style="margin: 0 0 16px; color: #475569; font-size: 14px; line-height: 1.5;"></p>
+    <div id="listaCotosModal" style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 6px; padding: 12px; text-align: left; max-height: 150px; overflow-y: auto; margin-bottom: 20px; font-size: 12px; color: #991b1b; font-weight: bold; line-height: 1.5;"></div>
+    <button type="button" id="btnCerrarModalCaza" onclick="cerrarModalAlerta()" style="width: 100%; padding: 11px; background: #dc2626; color: #ffffff; border: none; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer;">ENTENDIDO</button>
+  </div>
+</div>
+
+<script>
+  document.write('<scr' + 'ipt src="https://unpkg.' + 'com/leaflet@1.9.4/dist/leaflet.js"></scr' + 'ipt>');
+  document.write('<scr' + 'ipt src="https://unpkg.' + 'com/topojson-client@3.1.0/dist/topojson-client.min.js"></scr' + 'ipt>');
+</script>
+
+<script>
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || (e.ctrlKey && e.key === 'u')) {
+    e.preventDefault();
+  }
+});
+
+var map = L.map('map', { preferCanvas: true }).setView([43.16, -3.72], 9);
+
+var hostOsm = ['tile', 'openstreetmap', 'org'].join('.');
+var capaBaseCalle = L.tileLayer('https://{s}.' + hostOsm + '/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap | Cantabria | Open-Meteo'
+}).addTo(map);
+
+var hostEsri = ['server', 'arcgisonline', 'com'].join('.');
+var rutaEsri = ['ArcGIS', 'rest', 'services', 'World_Imagery', 'MapServer', 'tile', '{z}', '{y}', '{x}'].join('/');
+
+var capaBaseSatelite = L.tileLayer('https://' + hostEsri + '/' + rutaEsri, {
+  attribution: '© Esri | Cantabria | Open-Meteo',
+  maxZoom: 18
+});
+
+map.createPane('paneLluvia');
+map.getPane('paneLluvia').style.zIndex = 350;
+map.getPane('paneLluvia').style.pointerEvents = 'none';
+
+setTimeout(function() { map.invalidateSize(); }, 300);
+
+var capaCotosCantabria = null, capaZonasCantabria = null, dbCantabria = {};
+var capaRutaGpx = null, capaPeligroGpx = null, capaLluviaWMS = null;
+var cacheMeteoCotos = {};
+var cacheLluviaHoraria = null, puntosMallaLluvia = new Array(),, timerAnimacionLluvia = null;
+var limitesMallaLluvia = [[42.70, -5.00], [43.60, -3.00]];
+
+function normalizarCantabria(txt) {
+  if (!txt) return '';
+  return String(txt)
+    .toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Z0-9\s\-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function obtenerMatCantabria(p) {
+  if (!p) return '';
+  var ks = Object.keys(p);
+  for (var i = 0; i < ks.length; i++) {
+    var claveObj = ks.at(i);
+    var k = claveObj.toUpperCase();
+    if (k.indexOf('MAT') > -1 || k.indexOf('COD') > -1 || k.indexOf('COTO') > -1) {
+      var v = normalizarCantabria(p[claveObj]);
+      if (v.indexOf('C-') === 0) return v;
+    }
+  }
+  return normalizarCantabria(p.MATRICULA || p.CODIGO || '');
+}
+
+function obtenerLoteGeoCantabria(p) {
+  if (!p) return '';
+  var raw = p.LOTE || p.NOM_LOTE || p.NOMBRE_LOT || p.NOMBRE || p.ZONA || p.DENOMINACION || p.DESCRIPCIO || '';
+  return normalizarCantabria(raw);
+}
+
+function estiloCotoCantabria(f) {
+  var elSel = document.getElementById('selFecha');
+  var fs = elSel ? elSel.value : '';
+  var act = fs && dbCantabria[fs] && dbCantabria[fs].cotos && dbCantabria[fs].cotos[obtenerMatCantabria(f.properties)];
+  return act
+    ? { fillColor: '#dc2626', fillOpacity: 0.5, color: '#991b1b', weight: 2 }
+    : { fillColor: '#3b82f6', fillOpacity: 0.1, color: '#1d4ed8', weight: 1 };
+}
+
+function estiloZonaCantabria(f) {
+  var elSel = document.getElementById('selFecha');
+  var fs = elSel ? elSel.value : '';
+  var act = false;
+  if (fs && dbCantabria[fs] && dbCantabria[fs].lotes) {
+    var loteGeo = obtenerLoteGeoCantabria(f.properties);
+    if (dbCantabria[fs].lotes[loteGeo]) {
+      act = true;
+    } else if (loteGeo.length > 3) {
+      var clavesCsv = Object.keys(dbCantabria[fs].lotes);
+      for (var i = 0; i < clavesCsv.length; i++) {
+        var claveAct = clavesCsv.at(i);
+        if (claveAct.indexOf(loteGeo) > -1 || loteGeo.indexOf(claveAct) > -1) {
+          act = true; break;
+        }
+      }
+    }
+  }
+  return act
+    ? { fillColor: '#dc2626', fillOpacity: 0.45, color: '#991b1b', weight: 2 }
+    : { fillColor: '#f59e0b', fillOpacity: 0.15, color: '#d97706', weight: 2, dashArray: '5, 5' };
+}
+
+function actualizarColoresCantabria() {
+  if (capaCotosCantabria) capaCotosCantabria.setStyle(estiloCotoCantabria);
+  if (capaZonasCantabria) capaZonasCantabria.setStyle(estiloZonaCantabria);
+}
+
+function actualizarSelectFechas() {
+  var sel = document.getElementById('selFecha');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">-- Ver todas las zonas --</option>';
+  var fechasOrdenadas = Object.keys(dbCantabria).sort(function(a, b) {
+    var pa = a.split('/'), pb = b.split('/');
+    var da = pa.at(2) + pa.at(1) + pa.at(0);
+    var dbStr = pb.at(2) + pb.at(1) + pb.at(0);
+    return da.localeCompare(dbStr);
+  });
+  fechasOrdenadas.forEach(function(f) {
+    var opt = document.createElement('option');
+    opt.value = f; opt.text = f;
+    sel.appendChild(opt);
+  });
+  actualizarColoresCantabria();
+}
+
+function leerCsvCantabria(texto, tipo) {
+  var lineas = texto.split(/\r?\n/);
+  var idxLote = -1;
+  if (lineas.length > 0) {
+    var primeraLinea = lineas.at(0);
+    var sepCab = primeraLinea.indexOf(';') > -1 ? ';' : ',';
+    var cabeceras = primeraLinea.split(sepCab).map(normalizarCantabria);
+    cabeceras.forEach(function(col, i) {
+      if (col.indexOf('LOTE') > -1 || col.indexOf('ZONA') > -1 || col.indexOf('CUARTEL') > -1 || col.indexOf('NOMBRE') > -1) idxLote = i;
+    });
+  }
+
+  lineas.forEach(function(r, numLinea) {
+    var sep = r.indexOf(';') > -1 ? ';' : ',';
+    var cols = r.split(sep);
+    if (cols.length < 2) return;
+
+    var clave = '', fecha = '';
+    cols.forEach(function(c) {
+      var limpio = c.replace(/"/g, '').trim();
+      var matchDMY = limpio.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+      var matchYMD = limpio.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+      if (!fecha && matchDMY) {
+        var rawY = matchDMY.at(3);
+        var y = rawY.length === 2 ? '20' + rawY : rawY;
+        fecha = ('0' + matchDMY.at(1)).slice(-2) + '/' + ('0' + matchDMY.at(2)).slice(-2) + '/' + y;
+      } else if (!fecha && matchYMD) {
+        fecha = ('0' + matchYMD.at(3)).slice(-2) + '/' + ('0' + matchYMD.at(2)).slice(-2) + '/' + matchYMD.at(1);
+      }
+    });
+
+    if (tipo === 'cotos') {
+      cols.forEach(function(c) {
+        var v = normalizarCantabria(c);
+        if (!clave && v.indexOf('C-') === 0) clave = v;
+      });
+    } else {
+      if (idxLote > -1 && cols.length > idxLote && numLinea > 0) {
+        clave = normalizarCantabria(cols.at(idxLote));
+      } else {
+        var ignorar = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO', 'JABALI', 'VENADO', 'CORZO', 'LIEBRE', 'BATIDA', 'RECECHO'];
+        cols.forEach(function(c) {
+          var v = normalizarCantabria(c);
+          var esFecha = /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(c);
+          if (!clave && !esFecha && v.length > 2 && ignorar.indexOf(v) === -1 && isNaN(Number(v))) clave = v;
+        });
+      }
+    }
+
+    if (!clave || !fecha) return;
+    if (!dbCantabria[fecha]) dbCantabria[fecha] = { cotos: {}, lotes: {} };
+    if (tipo === 'cotos') dbCantabria[fecha].cotos[clave] = true;
+    else dbCantabria[fecha].lotes[clave] = true;
+  });
+}
+
+function iniciarCargaAutomatica() {
+  var msg = document.getElementById('msgCantabria');
+  if (msg) msg.innerText = 'Iniciando descarga de datos...';
+  dbCantabria = {};
+
+  Promise.all([
+    fetch('fechas_cotos.csv').then(function(r) { return r.ok ? r.text() : ''; }).catch(function() { return ''; }),
+    fetch('fechas_zonas.csv').then(function(r) { return r.ok ? r.text() : ''; }).catch(function() { return ''; })
+  ]).then(function(csvs) {
+    if (csvs.at(0)) leerCsvCantabria(csvs.at(0), 'cotos');
+    if (csvs.at(1)) leerCsvCantabria(csvs.at(1), 'reserva');
+    actualizarSelectFechas();
+    seleccionarFechaHoy();
+  });
+
+  fetch('cotos.json')
+    .then(function(r) {
+      if (!r.ok) throw new Error('Archivo cotos.json no encontrado (' + r.status + ')');
+      return r.json();
+    })
+    .then(function(data) {
+      var nombreCapa = data.objects ? Object.keys(data.objects)[0] : '';
+      var geoData = data.type === 'Topology' ? topojson.feature(data, data.objects[nombreCapa]) : data;
+
+      capaCotosCantabria = L.geoJSON(geoData, {
+        style: estiloCotoCantabria,
+        onEachFeature: function(f, l) {
+          l._tipoCapa = 'cantabria';
+          var id = 'll-' + Math.random().toString(36).substr(2, 6);
+          l.bindPopup('<b>Coto: ' + obtenerMatCantabria(f.properties) + '</b><br>' + (f.properties.NOMBRE || '') + '<div id="' + id + '" style="font-size:11px;">Cargando...</div>');
+          l.on('popupopen', function() { var c = l.getBounds().getCenter(); cargarLluviaCoto(c.lat, c.lng, id); });
+        }
+      }).addTo(map);
+      if (capaZonasCantabria) capaZonasCantabria.bringToFront();
+      if (msg) { msg.style.color = '#059669'; msg.innerText = 'Mapa y calendario activos.'; }
+    })
+    .catch(function(err) {
+      if (msg) { msg.style.color = '#dc2626'; msg.innerText = 'Error: ' + err.message; }
+    });
+
+  fetch('zonas.json')
+    .then(function(r) {
+      if (!r.ok) throw new Error('Archivo zonas.json no encontrado (' + r.status + ')');
+      return r.json();
+    })
+    .then(function(data) {
+      var nombreCapa = data.objects ? Object.keys(data.objects)[0] : '';
+      var geoData = data.type === 'Topology' ? topojson.feature(data, data.objects[nombreCapa]) : data;
+
+      capaZonasCantabria = L.geoJSON(geoData, {
+        style: estiloZonaCantabria,
+        onEachFeature: function(f, l) {
+          l._tipoCapa = 'cantabria';
+          var id = 'lz-' + Math.random().toString(36).substr(2, 6);
+          l.bindPopup('<b>Lote:</b> ' + obtenerLoteGeoCantabria(f.properties) + '<div id="' + id + '" style="font-size:11px;">Cargando...</div>');
+          l.on('popupopen', function() { var c = l.getBounds().getCenter(); cargarLluviaCoto(c.lat, c.lng, id); });
+        }
+      }).addTo(map);
+      capaZonasCantabria.bringToFront();
+      if (msg) { msg.style.color = '#059669'; msg.innerText = 'Mapa y calendario activos.'; }
+    })
+    .catch(function(err) {
+      if (msg) { msg.style.color = '#dc2626'; msg.innerText = 'Error: ' + err.message; }
+    });
+}
+
+function seleccionarFechaHoy() {
+  var sel = document.getElementById('selFecha');
+  if (!sel) return;
+  var hoy = new Date();
+  var dd = ('0' + hoy.getDate()).slice(-2);
+  var mm = ('0' + (hoy.getMonth() + 1)).slice(-2);
+  var yyyy = hoy.getFullYear();
+  var fechaHoy = dd + '/' + mm + '/' + yyyy;
+  for (var i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === fechaHoy) {
+      sel.value = fechaHoy;
+      actualizarColoresCantabria();
+      break;
+    }
+  }
+}
+
+setTimeout(iniciarCargaAutomatica, 400);
+
+map.on('popupopen', function(e) {
+  var capa = e.popup._source;
+  if (capa && capa.setStyle) {
+    capa.setStyle({ color: '#16a34a', weight: 4, fillColor: '#4ade80', fillOpacity: 0.45, dashArray: '' });
+    capa.bringToFront();
+  }
+});
+
+map.on('popupclose', function(e) {
+  var capa = e.popup._source;
+  if (capa && capa._tipoCapa === 'cantabria') {
+    actualizarColoresCantabria();
+  }
+});
+
+function puntoEnPoligonoNativo(punto, geometry) {
+  var x = punto.at(1), y = punto.at(0);
+  var dentro = false;
+  var rings = [];
+
+  if (geometry.type === 'Polygon') {
+    rings = geometry.coordinates;
+  } else if (geometry.type === 'MultiPolygon') {
+    geometry.coordinates.forEach(function(poly) {
+      rings = rings.concat(poly);
+    });
+  }
+
+  rings.forEach(function(ring) {
+    for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      var xi = ring.at(i).at(0), yi = ring.at(i).at(1);
+      var xj = ring.at(j).at(0), yj = ring.at(j).at(1);
+      var intersecta = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+      if (intersecta) dentro = !dentro;
+    }
+  });
+  return dentro;
+}
+
+function cargarGpx() {
+  var archivo = document.getElementById('fGpx').files.item(0);
+  var info = document.getElementById('infoGpx');
+  var divAlerta = document.getElementById('alertaSeguridadGpx');
+  if (!archivo) return;
+
+  if (divAlerta) { divAlerta.style.display = 'none'; divAlerta.innerHTML = ''; }
+
+  var lector = new FileReader();
+  lector.onload = function(e) {
+    var xml = new DOMParser().parseFromString(e.target.result, 'text/xml');
+    var puntosXml = xml.getElementsByTagName('trkpt');
+    if (puntosXml.length === 0) puntosXml = xml.getElementsByTagName('rtept');
+
+    var coords = new Array();
+    var desnivelPositivo = 0;
+    var desnivelNegativo = 0;
+    var ultimaEle = null;
+
+    for (var i = 0; i < puntosXml.length; i++) {
+      var pt = puntosXml.item(i);
+      var lat = parseFloat(pt.getAttribute('lat'));
+      var lon = parseFloat(pt.getAttribute('lon'));
+      var nodoEle = pt.getElementsByTagName('ele').item(0);
+      var ele = nodoEle ? parseFloat(nodoEle.textContent) : NaN;
+
+      if (!isNaN(lat) && !isNaN(lon)) {
+        coords.push([lat, lon]);
+        if (!isNaN(ele)) {
+          if (ultimaEle !== null) {
+            var dif = ele - ultimaEle;
+            if (dif > 2) { desnivelPositivo += dif; ultimaEle = ele; }
+            else if (dif < -2) { desnivelNegativo += Math.abs(dif); ultimaEle = ele; }
+          } else {
+            ultimaEle = ele;
+          }
+        }
+      }
+    }
+
+    if (coords.length === 0) {
+      if (info) { info.style.color = '#dc2626'; info.innerText = 'El archivo GPX no contiene puntos válidos.'; }
+      return;
+    }
+
+    if (capaRutaGpx) map.removeLayer(capaRutaGpx);
+
+    var distMetros = 0;
+    for (var j = 1; j < coords.length; j++) {
+      distMetros += map.distance(coords.at(j - 1), coords.at(j));
+    }
+
+    var grupoRuta = L.layerGroup();
+    L.polyline(coords, { color: '#000000', weight: 8, opacity: 0.9 }).addTo(grupoRuta);
+    var lineaPrincipal = L.polyline(coords, { color: '#facc15', weight: 4, opacity: 1 }).addTo(grupoRuta);
+
+    L.circleMarker(coords.at(0), { radius: 6, color: '#ffffff', weight: 2, fillColor: '#16a34a', fillOpacity: 1 })
+      .bindPopup('<b>Inicio de la ruta</b>').addTo(grupoRuta);
+    L.circleMarker(coords.at(-1), { radius: 6, color: '#ffffff', weight: 2, fillColor: '#dc2626', fillOpacity: 1 })
+      .bindPopup('<b>Fin de la ruta</b>').addTo(grupoRuta);
+
+    capaRutaGpx = grupoRuta.addTo(map);
+    map.fitBounds(lineaPrincipal.getBounds(), { paddingTopLeft: L.point(30, 30), paddingBottomRight: L.point(340, 30) });
+
+    if (info) {
+      info.style.color = '#1e293b';
+      var textoDesnivel = (desnivelPositivo > 0 || desnivelNegativo > 0)
+        ? ' | ↗️ <b>+' + Math.round(desnivelPositivo) + ' m</b> / ↘️ <b>-' + Math.round(desnivelNegativo) + ' m</b>'
+        : '';
+      info.innerHTML = 'Ruta cargada: <b>' + (distMetros / 1000).toFixed(2) + ' km</b>' + textoDesnivel;
+    }
+
+    window.coordsRutaActual = coords;
+    evaluarRutaGpx();
+  };
+  lector.readAsText(archivo, 'UTF-8');
+}
+
+function evaluarRutaGpx() {
+  var coords = window.coordsRutaActual;
+  if (!coords || coords.length === 0) return;
+
+  var divAlerta = document.getElementById('alertaSeguridadGpx');
+  if (capaPeligroGpx && map) map.removeLayer(capaPeligroGpx);
+  capaPeligroGpx = L.layerGroup().addTo(map);
+
+  var zonasAfectadas = new Array();
+  var todosLosPoligonos = new Array();
+
+  if (capaCotosCantabria) {
+    capaCotosCantabria.eachLayer(function(layer) {
+      todosLosPoligonos.push(layer.feature.geometry);
+      var elSel = document.getElementById('selFecha');
+      var fs = elSel ? elSel.value : '';
+      var fProp = layer.feature.properties;
+      var mat = obtenerMatCantabria(fProp);
+      var activoHoy = fs && dbCantabria[fs] && dbCantabria[fs].cotos && dbCantabria[fs].cotos[mat];
+
+      if (activoHoy) {
+        var poligonoGeo = layer.feature.geometry;
+        var estaDentro = false;
+        for (var p = 0; p < coords.length; p += Math.max(1, Math.floor(coords.length / 100))) {
+          if (puntoEnPoligonoNativo(coords.at(p), poligonoGeo)) { estaDentro = true; break; }
+        }
+        if (estaDentro) {
+          zonasAfectadas.push('Coto ' + mat + ' (' + (fProp.NOMBRE || 'Cantabria') + ')');
+          L.geoJSON(layer.feature, { style: { color: '#ef4444', weight: 4, fillColor: '#ef4444', fillOpacity: 0.35 } }).addTo(capaPeligroGpx);
+        }
+      }
+    });
+  }
+
+  if (capaZonasCantabria) {
+    capaZonasCantabria.eachLayer(function(layer) {
+      todosLosPoligonos.push(layer.feature.geometry);
+      var elSel = document.getElementById('selFecha');
+      var fs = elSel ? elSel.value : '';
+      var loteGeo = obtenerLoteGeoCantabria(layer.feature.properties);
+      var activoHoy = fs && dbCantabria[fs] && dbCantabria[fs].lotes && dbCantabria[fs].lotes[loteGeo];
+
+      if (activoHoy) {
+        var poligonoGeo = layer.feature.geometry;
+        var estaDentro = false;
+        for (var p = 0; p < coords.length; p += Math.max(1, Math.floor(coords.length / 100))) {
+          if (puntoEnPoligonoNativo(coords.at(p), poligonoGeo)) { estaDentro = true; break; }
+        }
+        if (estaDentro) {
+          zonasAfectadas.push('Lote ' + loteGeo);
+          L.geoJSON(layer.feature, { style: { color: '#ef4444', weight: 4, fillColor: '#ef4444', fillOpacity: 0.35 } }).addTo(capaPeligroGpx);
+        }
+      }
+    });
+  }
+
+  var sinMapaCotos = (todosLosPoligonos.length === 0);
+  var elSelFecha = document.getElementById('selFecha');
+  var sinFechaSeleccionada = (!elSelFecha || !elSelFecha.value || elSelFecha.value.trim() === '');
+  var saleDeCotos = false;
+
+  if (!sinMapaCotos) {
+    var paso = Math.max(1, Math.floor(coords.length / 80));
+    for (var k = 0; k < coords.length; k += paso) {
+      var puntoCubierto = false;
+      for (var m = 0; m < todosLosPoligonos.length; m++) {
+        if (puntoEnPoligonoNativo(coords.at(k), todosLosPoligonos.at(m))) {
+          puntoCubierto = true; break;
+        }
+      }
+      if (!puntoCubierto) { saleDeCotos = true; break; }
+    }
+  }
+
+  if (divAlerta) {
+    divAlerta.style.display = 'block';
+    var modal = document.getElementById('modalAlertaCaza');
+    var cajaModal = document.getElementById('cajaModalCaza');
+    var iconoModal = document.getElementById('iconoModalCaza');
+    var tituloModal = document.getElementById('tituloModalCaza');
+    var textoModal = document.getElementById('textoModalCaza');
+    var listaModal = document.getElementById('listaCotosModal');
+    var btnModal = document.getElementById('btnCerrarModalCaza');
+
+    if (sinMapaCotos) {
+      divAlerta.style.background = '#d97706'; divAlerta.style.border = '2px solid #b45309'; divAlerta.style.color = '#ffffff';
+      divAlerta.innerHTML = '⚠️ <b>FALTAN DATOS DE CAZA</b><br>Carga primero los archivos de Cantabria para analizar si esta ruta es segura.';
+      if (modal && cajaModal) {
+        cajaModal.style.background = '#fffbeb'; cajaModal.style.borderColor = '#d97706';
+        iconoModal.innerText = '⚠️'; tituloModal.style.color = '#b45309'; tituloModal.innerText = '¡FALTAN LOS MAPAS DE COTOS!';
+        textoModal.style.color = '#78350f';
+        textoModal.innerHTML = 'Has subido la ruta correctamente, pero <b>todavía no has cargado los cotos de caza</b>.<br><br>Por favor, carga archivo1 y/o archivo2 y vuelve a comprobar la ruta.';
+        listaModal.style.display = 'none'; btnModal.style.background = '#d97706'; btnModal.style.color = '#ffffff'; btnModal.innerText = 'ENTENDIDO, CARGAR ARCHIVOS';
+        modal.style.display = 'flex';
+      }
+    } else if (sinFechaSeleccionada) {
+      divAlerta.style.background = '#d97706'; divAlerta.style.border = '2px solid #b45309'; divAlerta.style.color = '#ffffff';
+      divAlerta.innerHTML = '📅 <b>FALTA SELECCIONAR FECHA</b><br>Elige una fecha en el desplegable (Punto 5) para cruzar los datos de caza.';
+      if (modal && cajaModal) {
+        cajaModal.style.background = '#fffbeb'; cajaModal.style.borderColor = '#d97706';
+        iconoModal.innerText = '📅'; tituloModal.style.color = '#b45309'; tituloModal.innerText = '¡FALTA SELECCIONAR FECHA!';
+        textoModal.style.color = '#78350f';
+        textoModal.innerHTML = 'Has cargado los archivos y la ruta correctamente, pero <b>no has seleccionado ninguna fecha</b>.<br><br>Por favor, selecciona un día en el desplegable de fechas para comprobar si hay batidas programadas.';
+        listaModal.style.display = 'none'; btnModal.style.background = '#d97706'; btnModal.style.color = '#ffffff'; btnModal.innerText = 'ENTENDIDO, ELEGIR FECHA';
+        modal.style.display = 'flex';
+      }
+    } else if (zonasAfectadas.length > 0) {
+      divAlerta.style.background = '#dc2626'; divAlerta.style.border = '2px solid #991b1b'; divAlerta.style.color = '#ffffff';
+      divAlerta.innerHTML = '🚨 <b>¡ALERTA MÁXIMA: RUTA EN PELIGRO!</b><br>El sendero atraviesa zonas con cacería activa hoy:<br><ul style="margin:6px 0 0; padding-left:15px; color:#ffffff; font-weight:bold;">' +
+        zonasAfectadas.map(function(z) { return '<li>' + z + '</li>'; }).join('') + '</ul>';
+      if (modal && cajaModal) {
+        cajaModal.style.background = '#ffffff'; cajaModal.style.borderColor = '#dc2626';
+        iconoModal.innerText = '🚨'; tituloModal.style.color = '#dc2626'; tituloModal.innerText = '¡RUTA EN PELIGRO DETECTADA!';
+        textoModal.style.color = '#475569';
+        textoModal.innerHTML = 'El sendero que has subido cruza o se encuentra dentro de zonas con <b>cacerías o batidas activas</b> para la fecha elegida:';
+        listaModal.style.display = 'block';
+        listaModal.innerHTML = '<ul style="margin:0; padding-left:15px;">' + zonasAfectadas.map(function(z) { return '<li>' + z + '</li>'; }).join('') + '</ul>';
+        btnModal.style.background = '#dc2626'; btnModal.style.color = '#ffffff'; btnModal.innerText = 'ENTENDIDO';
+        modal.style.display = 'flex';
+      }
+    }
+
+    else if (saleDeCotos) {
+      divAlerta.style.background = '#d97706'; divAlerta.style.border = '2px solid #b45309'; divAlerta.style.color = '#ffffff';
+      divAlerta.innerHTML = '⚠️ <b>PRECAUCIÓN EN RUTA</b><br>Libre en los cotos cargados, pero atraviesa zonas sin mapear o fuera de Cantabria.';
+      if (modal && cajaModal) {
+        cajaModal.style.background = '#fffbeb'; cajaModal.style.borderColor = '#d97706';
+        iconoModal.innerText = '⚠️'; tituloModal.style.color = '#b45309'; tituloModal.innerText = 'PRECAUCIÓN EN LA RUTA';
+        textoModal.style.color = '#78350f';
+        textoModal.innerHTML = 'En los cotos cargados no hay caza activa, pero:<br><br><b>ESTA RUTA PUEDE QUE NO SEA DEL TODO SEGURA.</b><br><br>Es probable que la ruta salga de los límites cargados o entre en otra comunidad autónoma.';
+        listaModal.style.display = 'none'; btnModal.style.background = '#d97706'; btnModal.style.color = '#ffffff'; btnModal.innerText = 'ENTENDIDO';
+        modal.style.display = 'flex';
+      }
+    } else {
+      divAlerta.style.background = '#16a34a'; divAlerta.style.border = '2px solid #15803d'; divAlerta.style.color = '#ffffff';
+      divAlerta.innerHTML = '✅ <b>¡RUTA SEGURA!</b><br>Enhorabuena, tu ruta se encuentra libre de caza en la fecha seleccionada.';
+      if (modal && cajaModal) {
+        cajaModal.style.background = '#16a34a'; cajaModal.style.borderColor = '#14532d';
+        iconoModal.innerText = '✅'; tituloModal.style.color = '#ffffff'; tituloModal.innerText = '¡RUTA LIBRE DE CAZA!';
+        textoModal.style.color = '#f0fdf4';
+        textoModal.innerHTML = 'Enhorabuena, tu ruta se encuentra libre de caza en la fecha seleccionada.';
+        listaModal.style.display = 'none'; btnModal.style.background = '#ffffff'; btnModal.style.color = '#15803d'; btnModal.innerText = '¡GENIAL, CERRAR AVISO!';
+        modal.style.display = 'flex';
+      }
+    }
+  }
+}
+
+var selectorFechaGpx = document.getElementById('selFecha');
+if (selectorFechaGpx) {
+  selectorFechaGpx.addEventListener('change', function() {
+    setTimeout(evaluarRutaGpx, 150);
+  });
+}
+
+function cerrarModalAlerta() {
+  var modal = document.getElementById('modalAlertaCaza');
+  if (modal) modal.style.display = 'none';
+}
+
+function pintarHtmlMeteo(el, d) {
+  if (!el || !d || !d.daily) return;
+  var s = d.daily.precipitation_sum;
+  var p = d.daily.precipitation_probability_max;
+  var tmax = d.daily.temperature_2m_max;
+  var tmin = d.daily.temperature_2m_min;
+  var v = d.daily.wind_speed_10m_max;
+
+  el.innerHTML = '<hr style="margin:6px 0; border:0; border-top:1px solid #e2e8f0;"><b>Previsión en este coto:</b><br>' +
+    '<b>Hoy:</b> 💧 ' + s.at(0) + ' mm (' + (p.at(0) || 0) + '%) | 🌡️ ' + Math.round(tmin.at(0)) + '°/' + Math.round(tmax.at(0)) + '° | 💨 ' + Math.round(v.at(0)) + ' km/h<br>' +
+    '<b>+24h:</b> 💧 ' + s.at(1) + ' mm (' + (p.at(1) || 0) + '%) | 🌡️ ' + Math.round(tmin.at(1)) + '°/' + Math.round(tmax.at(1)) + '° | 💨 ' + Math.round(v.at(1)) + ' km/h<br>' +
+    '<b>+48h:</b> 💧 ' + s.at(2) + ' mm (' + (p.at(2) || 0) + '%) | 🌡️ ' + Math.round(tmin.at(2)) + '°/' + Math.round(tmax.at(2)) + '° | 💨 ' + Math.round(v.at(2)) + ' km/h';
+}
+
+function crearUrlOpenMeteo() {
+  var sub = ['a', 'p', 'i'].join('');
+  var dom = ['open', 'meteo'].join('-');
+  var u = new URL('https://' + sub + '.' + dom + '.com');
+  u.pathname = '/v1/forecast';
+  return u;
+}
+
+function cargarLluviaCoto(lat, lon, divId) {
+  var el = document.getElementById(divId);
+  if (!el) return;
+  var latKey = lat.toFixed(2), lonKey = lon.toFixed(2);
+  var clave = latKey + '_' + lonKey;
+  if (cacheMeteoCotos[clave]) { pintarHtmlMeteo(el, cacheMeteoCotos[clave]); return; }
+
+  var url = crearUrlOpenMeteo();
+  url.searchParams.set('latitude', latKey);
+  url.searchParams.set('longitude', lonKey);
+  url.searchParams.set('daily', 'precipitation_sum,precipitation_probability_max,temperature_2m_max,temperature_2m_min,wind_speed_10m_max');
+  url.searchParams.set('timezone', 'Europe/Madrid');
+  url.searchParams.set('forecast_days', '3');
+
+  fetch(url.toString())
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(d) { cacheMeteoCotos[clave] = d; pintarHtmlMeteo(document.getElementById(divId), d); })
+    .catch(function(err) { if (document.getElementById(divId)) document.getElementById(divId).innerHTML = '<span style="color:#dc2626;">Error meteo: ' + err.message + '</span>'; });
+}
+
+function actualizarCapaLluvia() {
+  var elChk = document.getElementById('chkLluvia');
+  var activo = elChk ? elChk.checked : false;
+  var panelSlider = document.getElementById('panelSliderLluvia');
+  var ley = document.getElementById('leyendaLluvia');
+
+  if (!activo) {
+    detenerAnimacionLluvia();
+    if (capaLluviaWMS) { map.removeLayer(capaLluviaWMS); capaLluviaWMS = null; }
+    cacheLluviaHoraria = null;
+    if (panelSlider) panelSlider.style.display = 'none';
+    if (ley) ley.style.display = 'none';
+    return;
+  }
+  if (panelSlider) panelSlider.style.display = 'block';
+  if (ley) ley.style.display = 'block';
+  if (cacheLluviaHoraria) { dibujarFrameLluvia(); return; }
+
+  if (ley) ley.innerHTML = '<b>Descargando previsión horaria (48h)...</b>';
+  puntosMallaLluvia = new Array();
+  var minCoord = limitesMallaLluvia.at(0);
+  var maxCoord = limitesMallaLluvia.at(1);
+  var latMin = minCoord.at(0), lonMin = minCoord.at(1);
+  var latMax = maxCoord.at(0), lonMax = maxCoord.at(1);
+
+  for (var r = 0; r < 5; r++) {
+    var lat = latMin + (latMax - latMin) * (r / 4);
+    for (var c = 0; c < 7; c++) {
+      var lon = lonMin + (lonMax - lonMin) * (c / 6);
+      puntosMallaLluvia.push({ lat: Number(lat.toFixed(3)), lon: Number(lon.toFixed(3)) });
+    }
+  }
+
+  var urlHoraria = crearUrlOpenMeteo();
+  urlHoraria.searchParams.set('latitude', puntosMallaLluvia.map(function(p) { return p.lat; }).join(','));
+  urlHoraria.searchParams.set('longitude', puntosMallaLluvia.map(function(p) { return p.lon; }).join(','));
+  urlHoraria.searchParams.set('hourly', 'precipitation');
+  urlHoraria.searchParams.set('timezone', 'Europe/Madrid');
+  urlHoraria.searchParams.set('forecast_days', '3');
+
+  fetch(urlHoraria.toString())
+    .then(function(r) { return r.json(); })
+    .then(function(res) { cacheLluviaHoraria = Array.isArray(res) ? res : [res]; dibujarFrameLluvia(); })
+    .catch(function() { if (ley) ley.innerHTML = '<b style="color:#dc2626;">Error al descargar horas.</b>'; });
+}
+
+function dibujarFrameLluvia() {
+  if (!cacheLluviaHoraria) return;
+  var elSl = document.getElementById('sliderHoraLluvia');
+  var offset = elSl ? parseInt(elSl.value, 10) : 0;
+  var horaActual = new Date().getHours();
+  var indiceHora = horaActual + offset;
+
+  var fObj = new Date();
+  fObj.setHours(horaActual + offset, 0, 0, 0);
+  var dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  var txtH = dias.at(fObj.getDay()) + ' ' + ('0' + fObj.getDate()).slice(-2) + '/' + ('0' + (fObj.getMonth() + 1)).slice(-2) + ' - ' + ('0' + fObj.getHours()).slice(-2) + ':00';
+
+  if (document.getElementById('lblHoraLluvia')) document.getElementById('lblHoraLluvia').innerText = txtH;
+  if (document.getElementById('lblOffsetLluvia')) document.getElementById('lblOffsetLluvia').innerText = '+' + offset + 'h';
+
+  var canvas = document.createElement('canvas');
+  canvas.width = 420;
+  canvas.height = 280;
+  var ctx = canvas.getContext('2d');
+  var maxMmHora = 0;
+
+  var minCoord = limitesMallaLluvia.at(0);
+  var maxCoord = limitesMallaLluvia.at(1);
+  var latMin = minCoord.at(0), lonMin = minCoord.at(1);
+  var latMax = maxCoord.at(0), lonMax = maxCoord.at(1);
+
+  cacheLluviaHoraria.forEach(function(item, idx) {
+    if (!item.hourly || !item.hourly.precipitation) return;
+    var p = puntosMallaLluvia.at(idx);
+    var mm = item.hourly.precipitation.at(indiceHora) || 0;
+    if (mm > maxMmHora) maxMmHora = mm;
+
+    if (mm > 0.05) {
+      var x = ((p.lon - lonMin) / (lonMax - lonMin)) * canvas.width;
+      var y = ((latMax - p.lat) / (latMax - latMin) * canvas.height);
+      var rCol = 56, gCol = 189, bCol = 248, al = 0.90;
+      if (mm >= 5) { rCol = 239; gCol = 68; bCol = 68; al = 0.85; }
+      else if (mm >= 2) { rCol = 16; gCol = 185; bCol = 129; al = 0.80; }
+      else if (mm >= 0.5) { rCol = 37; gCol = 99; bCol = 235; al = 0.72; }
+
+      var grad = ctx.createRadialGradient(x, y, 2, x, y, 72);
+      grad.addColorStop(0, 'rgba(' + rCol + ',' + gCol + ',' + bCol + ',' + al + ')');
+      grad.addColorStop(0.55, 'rgba(' + rCol + ',' + gCol + ',' + bCol + ',' + (al * 0.4) + ')');
+      grad.addColorStop(1, 'rgba(' + rCol + ',' + gCol + ',' + bCol + ',0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(x, y, 72, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+
+  ctx.globalCompositeOperation = 'destination-in';
+  var mH = ctx.createLinearGradient(0, 0, canvas.width, 0);
+  mH.addColorStop(0, 'rgba(0,0,0,0)'); mH.addColorStop(0.12, 'rgba(0,0,0,1)');
+  mH.addColorStop(0.88, 'rgba(0,0,0,1)'); mH.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = mH;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  var mV = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  mV.addColorStop(0, 'rgba(0,0,0,0)'); mV.addColorStop(0.15, 'rgba(0,0,0,1)');
+  mV.addColorStop(0.85, 'rgba(0,0,0,1)'); mV.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = mV;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.globalCompositeOperation = 'source-over';
+
+  var imgUrl = canvas.toDataURL('image/png');
+  if (capaLluviaWMS) {
+    capaLluviaWMS.setUrl(imgUrl);
+    capaLluviaWMS.setBounds(limitesMallaLluvia);
+  } else {
+    capaLluviaWMS = L.imageOverlay(imgUrl, limitesMallaLluvia, { opacity: 1, pane: 'paneLluvia', interactive: false }).addTo(map);
+  }
+
+  if (document.getElementById('leyendaLluvia')) {
+    document.getElementById('leyendaLluvia').innerHTML = '<b>Intensidad máx.: ' + maxMmHora.toFixed(1) + ' mm/h</b><div style="height:8px; width:100%; margin-top:3px; border-radius:2px; background: linear-gradient(to right, #38bdf8, #2563eb, #10b981, #ef4444);"></div><div style="display:flex; justify-content:space-between; margin-top:2px;"><span>0.1</span><span>0.5</span><span>2.0</span><span>+5 mm/h</span></div>';
+  }
+}
+
+function togglePlayLluvia() { if (!cacheLluviaHoraria) return; if (timerAnimacionLluvia) detenerAnimacionLluvia(); else iniciarAnimacionLluvia(); }
+
+function iniciarAnimacionLluvia() {
+  var btn = document.getElementById('btnPlayLluvia');
+  var elVel = document.getElementById('selVelLluvia');
+  var vel = elVel ? (parseInt(elVel.value, 10) || 800) : 800;
+  if (btn) { btn.innerText = '⏸ Pausa'; btn.style.background = '#dc2626'; }
+  if (timerAnimacionLluvia) clearInterval(timerAnimacionLluvia);
+  timerAnimacionLluvia = setInterval(function() {
+    var slider = document.getElementById('sliderHoraLluvia');
+    if (slider) { var actual = parseInt(slider.value, 10); slider.value = actual >= 48 ? 0 : actual + 1; }
+    dibujarFrameLluvia();
+  }, vel);
+}
+
+function detenerAnimacionLluvia() {
+  if (timerAnimacionLluvia) { clearInterval(timerAnimacionLluvia); timerAnimacionLluvia = null; }
+  var btn = document.getElementById('btnPlayLluvia');
+  if (btn) { btn.innerText = '▶ Play'; btn.style.background = '#2563eb'; }
+}
+
+function cambiarVelocidadLluvia() { if (timerAnimacionLluvia) iniciarAnimacionLluvia(); }
+function pausarSiManual() { if (timerAnimacionLluvia) detenerAnimacionLluvia(); }
+
+function togglePanel() {
+  var panel = document.getElementById('panelPrincipal');
+  var btn = document.getElementById('btnTogglePanel');
+  if (!panel) return;
+  if (panel.style.display === 'none') { panel.style.display = 'block'; if (btn) btn.innerText = '✕'; }
+  else { panel.style.display = 'none'; if (btn) btn.innerText = '☰'; }
+}
+
+function cambiarTipoMapa(tipo) {
+  var btnCalle = document.getElementById('btnMapaCalle');
+  var btnSat = document.getElementById('btnMapaSatelite');
+  if (!map) return;
+
+  if (tipo === 'satelite') {
+    if (capaBaseCalle && map.hasLayer(capaBaseCalle)) map.removeLayer(capaBaseCalle);
+    capaBaseSatelite.addTo(map);
+    if (capaBaseSatelite.bringToBack) capaBaseSatelite.bringToBack();
+    if (btnSat) { btnSat.style.background = '#2563eb'; btnSat.style.color = '#fff'; btnSat.style.borderColor = '#2563eb'; }
+    if (btnCalle) { btnCalle.style.background = '#f8fafc'; btnCalle.style.color = '#475569'; btnCalle.style.borderColor = '#cbd5e1'; }
+  } else {
+    if (capaBaseSatelite && map.hasLayer(capaBaseSatelite)) map.removeLayer(capaBaseSatelite);
+    capaBaseCalle.addTo(map);
+    if (capaBaseCalle.bringToBack) capaBaseCalle.bringToBack();
+    if (btnCalle) { btnCalle.style.background = '#2563eb'; btnCalle.style.color = '#fff'; btnCalle.style.borderColor = '#2563eb'; }
+    if (btnSat) { btnSat.style.background = '#f8fafc'; btnSat.style.color = '#475569'; btnSat.style.borderColor = '#cbd5e1'; }
+  }
+}
+</script>
+</body>
+</html>
