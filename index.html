@@ -1064,23 +1064,15 @@ function cambiarComunidad(com) {
     if (pCant) pCant.style.display = 'none';
     if (pCyl) pCyl.style.display = 'block';
 
-    if (!cylCargado) {
-      cargarCotosCyl();
-    } else if (capaCotosCyl && !map.hasLayer(capaCotosCyl)) {
-      capaCotosCyl.addTo(map);
-    }
-    map.setView([42.65, -4.30], 8);
+    actualizarCapasVisibles();
+    map.setView([42.35, -4.30], 8);
   } else {
     if (btnCant) { btnCant.style.background = '#2563eb'; btnCant.style.color = '#ffffff'; }
     if (btnCyl) { btnCyl.style.background = 'transparent'; btnCyl.style.color = '#475569'; }
     if (pCyl) pCyl.style.display = 'none';
     if (pCant) pCant.style.display = 'block';
 
-    if (capaCotosCantabria && !map.hasLayer(capaCotosCantabria)) capaCotosCantabria.addTo(map);
-    if (capaZonasCantabria) {
-      if (!map.hasLayer(capaZonasCantabria)) capaZonasCantabria.addTo(map);
-      capaZonasCantabria.bringToFront();
-    }
+    actualizarCapasVisibles();
     map.setView([43.16, -3.72], 9);
   }
 }
@@ -1151,7 +1143,12 @@ function procesarTablaCyl() {
   cotosActivosCyl = {};
 
   if (!txt || txt.trim() === '') {
-    if (capaCotosCyl) capaCotosCyl.setStyle(estiloCotoCyl);
+      if (matches) {
+    if (txt.toUpperCase().indexOf('BU-') > -1 && document.getElementById('chkBurgos')) document.getElementById('chkBurgos').checked = true;
+    if (txt.toUpperCase().indexOf('P-') > -1 && document.getElementById('chkPalencia')) document.getElementById('chkPalencia').checked = true;
+  }
+  actualizarCapasVisibles();
+
     if (msg) { msg.style.color = '#d97706'; msg.innerText = 'Cuadro vacío. Mostrando todos los cotos.'; }
     if (window.coordsRutaActual) evaluarRutaGpx();
     return;
