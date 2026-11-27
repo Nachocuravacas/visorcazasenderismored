@@ -1228,19 +1228,23 @@ evaluarRutaGpx = function() {
     });
   }
 
-  // 3. Revisar Cotos de Castilla y León
+    // 3. Revisar Cotos de Castilla y León
+  var rutaTocaCyl = false;
   if (capaCotosCyl) {
     capaCotosCyl.eachLayer(function(layer) {
       todosLosPoligonos.push(layer.feature.geometry);
       var p = layer.feature.properties || {};
       var mat = obtenerMatCyl(p);
-      if (mat && cotosActivosCyl[mat]) {
-        var poligonoGeo = layer.feature.geometry;
-        var estaDentro = false;
-        for (var i = 0; i < coords.length; i += Math.max(1, Math.floor(coords.length / 100))) {
-          if (puntoEnPoligonoNativo(coords.at(i), poligonoGeo)) { estaDentro = true; break; }
-        }
-        if (estaDentro) {
+      var poligonoGeo = layer.feature.geometry;
+      var estaDentro = false;
+
+      for (var i = 0; i < coords.length; i += Math.max(1, Math.floor(coords.length / 100))) {
+        if (puntoEnPoligonoNativo(coords.at(i), poligonoGeo)) { estaDentro = true; break; }
+      }
+
+      if (estaDentro) {
+        rutaTocaCyl = true;
+        if (mat && cotosActivosCyl[mat]) {
           zonasAfectadas.push('CyL - Coto ' + mat + ' (' + (p.nombre || p.provincia || '') + ')');
           L.geoJSON(layer.feature, { style: { color: '#ef4444', weight: 4, fillColor: '#ef4444', fillOpacity: 0.35 } }).addTo(capaPeligroGpx);
         }
@@ -1262,6 +1266,8 @@ evaluarRutaGpx = function() {
       if (!puntoCubierto) { saleDeCotos = true; break; }
     }
   }
+
+  var faltaTablaCyl = (comunidadActiva === 'cyl' || rutaTocaCyl) && (Object.keys(cotosActivosCyl).length === 0);
 
   if (divAlerta) {
     divAlerta.style.display = 'block';
@@ -1285,6 +1291,17 @@ evaluarRutaGpx = function() {
         listaModal.style.display = 'block';
         listaModal.innerHTML = '<ul style="margin:0; padding-left:15px;">' + zonasAfectadas.map(function(z) { return '<li>' + z + '</li>'; }).join('') + '</ul>';
         btnModal.style.background = '#dc2626'; btnModal.style.color = '#ffffff'; btnModal.innerText = 'ENTENDIDO';
+        modal.style.display = 'flex';
+      }
+    } else if (faltaTablaCyl) {
+      divAlerta.style.background = '#d97706'; divAlerta.style.border = '2px solid #b45309'; divAlerta.style.color = '#ffffff';
+      divAlerta.innerHTML = '📋 <b>FALTA LISTADO DE CACERÍAS (CyL)</b><br>Tu ruta pasa por Castilla y León, pero no has pegado la tabla de la Junta para comprobar si hay caza.';
+      if (modal && cajaModal) {
+        cajaModal.style.background = '#fffbeb'; cajaModal.style.borderColor = '#d97706';
+        iconoModal.innerText = '📋'; tituloModal.style.color = '#b45309'; tituloModal.innerText = '¡FALTA EL LISTADO DE CACERÍAS!';
+        textoModal.style.color = '#78350f';
+        textoModal.innerHTML = 'Tu ruta transcurre por Castilla y León (o estás en esa pestaña), pero <b>todavía no has pegado el listado de cacerías de la Junta</b> para una fecha determinada.<br><br>Por favor, pega las filas de la web de la Junta y pulsa <b>Mostrar cotos en el mapa</b> para verificar si es segura.';
+        listaModal.style.display = 'none'; btnModal.style.background = '#d97706'; btnModal.style.color = '#ffffff'; btnModal.innerText = 'ENTENDIDO, PEGAR TABLA';
         modal.style.display = 'flex';
       }
     } else if (saleDeCotos) {
@@ -1312,6 +1329,8 @@ evaluarRutaGpx = function() {
     }
   }
 };
+
+
 </script>
 </body>
 </html>
