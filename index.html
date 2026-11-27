@@ -98,22 +98,23 @@
 <button type="button" id="btnTogglePanel" onclick="togglePanel()" title="Mostrar / Ocultar menú">✕</button>
 
 <div id="panelPrincipal">
-  <div style="display:flex; background:#f1f5f9; padding:3px; border-radius:6px; margin-bottom:12px; gap:4px;">
-    <button type="button" id="tabCantabria" onclick="cambiarComunidad('cantabria')" style="flex:1; padding:7px 4px; border:none; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer; background:#2563eb; color:#ffffff;">Cantabria</button>
-    <button type="button" id="tabCyl" onclick="cambiarComunidad('cyl')" style="flex:1; padding:7px 4px; border:none; border-radius:4px; font-size:12px; font-weight:bold; cursor:pointer; background:transparent; color:#475569;">Castilla y León</button>
+  <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:7px 10px; margin-bottom:10px;">
+    <div style="font-size:11px; font-weight:bold; color:#475569; margin-bottom:5px;">Mostrar cotos en el mapa:</div>
+    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:bold; color:#1e293b;">
+      <label style="cursor:pointer; display:flex; align-items:center; gap:4px;">
+        <input type="checkbox" id="chkCantabria" checked onchange="actualizarCapasVisibles()"> Cantabria
+      </label>
+      <label style="cursor:pointer; display:flex; align-items:center; gap:4px;">
+        <input type="checkbox" id="chkBurgos" onchange="actualizarCapasVisibles()"> Burgos
+      </label>
+      <label style="cursor:pointer; display:flex; align-items:center; gap:4px;">
+        <input type="checkbox" id="chkPalencia" onchange="actualizarCapasVisibles()"> Palencia
+      </label>
+    </div>
   </div>
 
-  <div id="panelCantabria">
-    <h3 style="margin:0 0 10px; font-size:18px; color:#1e293b;">Cotos y Zonas Cantabria 26-27</h3>
-    
-    <div id="msgCantabria" style="font-size:12px; margin-bottom:8px; font-weight:bold; color:#2563eb;">Cargando mapa y fechas...</div>
-    
-    <label style="display:block; font-size:13px; font-weight:bold; margin:6px 0 4px;">Filtrar por Fecha:</label>
-    <select id="selFecha" onchange="actualizarColoresCantabria()" style="width:100%; padding:7px; border-radius:4px; border:1px solid #ccc;">
-      <option value="">-- Cargando fechas... --</option>
-    </select>
+  <div style="display:flex; background:#f1f5f9; padding:3px; border-radius:6px; margin-bottom:12px; gap:4px;">
 
-    <div style="margin-top:10px; padding-top:8px; border-top:1px solid #eee; font-size:11px; color:#334155;">
       <div style="display:flex; align-items:center; margin-bottom:4px;">
         <span style="display:inline-block; width:12px; height:12px; background:rgba(220,38,38,0.5); border:1px solid #991b1b; margin-right:6px;"></span>
         <span>Coto con batida programada</span>
@@ -1081,12 +1082,24 @@ function obtenerMatCyl(p) {
 }
 
 function estiloCotoCyl(f) {
-  var mat = obtenerMatCyl(f.properties);
+  var p = f.properties || {};
+  var prov = String(p.provincia || '').toUpperCase();
+  var verBurgos = document.getElementById('chkBurgos') && document.getElementById('chkBurgos').checked;
+  var verPalencia = document.getElementById('chkPalencia') && document.getElementById('chkPalencia').checked;
+
+  var visible = (prov.indexOf('BURGOS') > -1 && verBurgos) || (prov.indexOf('PALENCIA') > -1 && verPalencia);
+
+  if (!visible) {
+    return { fillOpacity: 0, opacity: 0, interactive: false };
+  }
+
+  var mat = obtenerMatCyl(p);
   var act = mat && cotosActivosCyl[mat];
   return act
-    ? { fillColor: '#dc2626', fillOpacity: 0.55, color: '#991b1b', weight: 2 }
-    : { fillColor: '#64748b', fillOpacity: 0.08, color: '#475569', weight: 1 };
+    ? { fillColor: '#dc2626', fillOpacity: 0.55, color: '#991b1b', weight: 2, opacity: 1, interactive: true }
+    : { fillColor: '#64748b', fillOpacity: 0.08, color: '#475569', weight: 1, opacity: 1, interactive: true };
 }
+
 
 function cargarCotosCyl() {
   var msg = document.getElementById('msgCyl');
@@ -1329,6 +1342,41 @@ evaluarRutaGpx = function() {
     }
   }
 };
+
+function actualizarCapasVisibles() {
+  var verCant = document.getElementById('chkCantabria') ? document.getElementById('chkCantabria').checked : true;
+  var verBurgos = document.getElementById('chkBurgos') ? document.getElementById('chkBurgos').checked : false;
+  var verPalencia = document.getElementById('chkPalencia') ? document.getElementById('chkPalencia').checked : false;
+
+  // Mostrar u ocultar Cantabria
+  if (capaCotosCantabria) {
+    if (verCant && !map.hasLayer(capaCotosCantabria)) capaCotosCantabria.addTo(map);
+    if (!verCant && map.hasLayer(capaCotosCantabria)) map.removeLayer(capaCotosCantabria);
+  }
+  if (capaZonasCantabria) {
+    if (verCant && !map.hasLayer(capaZonasCantabria)) {
+      capaZonasCantabria.addTo(map);
+      capaZonasCantabria.bringToFront();
+    }
+    if (!verCant && map.hasLayer(capaZonasCantabria)) map.removeLayer(capaZonasCantabria);
+  }
+
+  // Mostrar u ocultar Burgos / Palencia
+  if (verBurgos || verPalencia) {
+    if (!cylCargado) {
+      cargarCotosCyl(false);
+    } else if (capaCotosCyl) {
+      if (!map.hasLayer(capaCotosCyl)) capaCotosCyl.addTo(map);
+      capaCotosCyl.setStyle(estiloCotoCyl);
+    }
+  } else {
+    if (capaCotosCyl && map.hasLayer(capaCotosCyl)) {
+      map.removeLayer(capaCotosCyl);
+    }
+  }
+
+  if (window.coordsRutaActual) evaluarRutaGpx();
+}
 
 
 </script>
