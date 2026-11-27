@@ -186,6 +186,10 @@
     <input type="file" id="fGpx" accept=".gpx" onchange="cargarGpx()" style="width:100%; font-size:11px;">
     <div id="infoGpx" style="font-size:11px; color:#065f46; margin-top:4px; font-weight:bold;"></div>
     <div id="alertaSeguridadGpx" style="display:none; margin-top:8px; padding:10px; border-radius:6px; font-size:12px; line-height:1.4;"></div>
+    <button type="button" id="btnDescargarFicha" onclick="descargarFichaRuta()" style="display:none; width:100%; margin-top:8px; padding:8px; background:#0f172a; color:#ffffff; border:none; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.2);">
+      📸 Descargar resumen de ruta (Imagen)
+    </button>
+
   </div>
 
   <div style="margin-top:12px; padding-top:10px; border-top:1px solid #eee;">
@@ -630,6 +634,8 @@ function evaluarRutaGpx() {
   capaPeligroGpx = L.layerGroup().addTo(map);
 
   var zonasAfectadas = new Array();
+window.resumenCotosRuta = [];
+
   var todosLosPoligonos = new Array();
 
   if (capaCotosCantabria) {
@@ -1208,7 +1214,7 @@ evaluarRutaGpx = function() {
   var zonasAfectadas = new Array();
   var todosLosPoligonos = new Array();
 
-  // 1. Revisar Cotos de Cantabria
+    // 1. Revisar Cotos de Cantabria
   if (capaCotosCantabria) {
     capaCotosCantabria.eachLayer(function(layer) {
       todosLosPoligonos.push(layer.feature.geometry);
@@ -1218,14 +1224,16 @@ evaluarRutaGpx = function() {
       var mat = obtenerMatCantabria(fProp);
       var activoHoy = fs && dbCantabria[fs] && dbCantabria[fs].cotos && dbCantabria[fs].cotos[mat];
 
-      if (activoHoy) {
-        var poligonoGeo = layer.feature.geometry;
-        var estaDentro = false;
-        for (var p = 0; p < coords.length; p += Math.max(1, Math.floor(coords.length / 100))) {
-          if (puntoEnPoligonoNativo(coords.at(p), poligonoGeo)) { estaDentro = true; break; }
-        }
-        if (estaDentro) {
-          zonasAfectadas.push('Cantabria - Coto ' + mat + ' (' + (fProp.NOMBRE || '') + ')');
+      var poligonoGeo = layer.feature.geometry;
+      var estaDentro = false;
+      for (var p = 0; p < coords.length; p += Math.max(1, Math.floor(coords.length / 100))) {
+        if (puntoEnPoligonoNativo(coords.at(p), poligonoGeo)) { estaDentro = true; break; }
+      }
+      if (estaDentro) {
+        var nombreCoto = 'Cantabria - Coto ' + mat + (fProp.NOMBRE ? ' (' + fProp.NOMBRE + ')' : '');
+        window.resumenCotosRuta.push({ nombre: nombreCoto, peligro: !!activoHoy });
+        if (activoHoy) {
+          zonasAfectadas.push(nombreCoto);
           L.geoJSON(layer.feature, { style: { color: '#ef4444', weight: 4, fillColor: '#ef4444', fillOpacity: 0.35 } }).addTo(capaPeligroGpx);
         }
       }
@@ -1241,21 +1249,23 @@ evaluarRutaGpx = function() {
       var loteGeo = obtenerLoteGeoCantabria(layer.feature.properties);
       var activoHoy = fs && dbCantabria[fs] && dbCantabria[fs].lotes && dbCantabria[fs].lotes[loteGeo];
 
-      if (activoHoy) {
-        var poligonoGeo = layer.feature.geometry;
-        var estaDentro = false;
-        for (var p = 0; p < coords.length; p += Math.max(1, Math.floor(coords.length / 100))) {
-          if (puntoEnPoligonoNativo(coords.at(p), poligonoGeo)) { estaDentro = true; break; }
-        }
-        if (estaDentro) {
-          zonasAfectadas.push('Cantabria - Lote ' + loteGeo);
+      var poligonoGeo = layer.feature.geometry;
+      var estaDentro = false;
+      for (var p = 0; p < coords.length; p += Math.max(1, Math.floor(coords.length / 100))) {
+        if (puntoEnPoligonoNativo(coords.at(p), poligonoGeo)) { estaDentro = true; break; }
+      }
+      if (estaDentro) {
+        var nombreLote = 'Cantabria - Lote ' + loteGeo;
+        window.resumenCotosRuta.push({ nombre: nombreLote, peligro: !!activoHoy });
+        if (activoHoy) {
+          zonasAfectadas.push(nombreLote);
           L.geoJSON(layer.feature, { style: { color: '#ef4444', weight: 4, fillColor: '#ef4444', fillOpacity: 0.35 } }).addTo(capaPeligroGpx);
         }
       }
     });
   }
 
-    // 3. Revisar Cotos de Castilla y León
+  // 3. Revisar Cotos de Castilla y León
   var rutaTocaCyl = false;
   if (capaCotosCyl) {
     capaCotosCyl.eachLayer(function(layer) {
@@ -1271,15 +1281,17 @@ evaluarRutaGpx = function() {
 
       if (estaDentro) {
         rutaTocaCyl = true;
-        if (mat && cotosActivosCyl[mat]) {
-          zonasAfectadas.push('CyL - Coto ' + mat + ' (' + (p.nombre || p.provincia || '') + ')');
+        var activoCyl = !!(mat && cotosActivosCyl[mat]);
+        var nombreCyl = 'CyL - Coto ' + mat + (p.nombre ? ' (' + p.nombre + ')' : '');
+        window.resumenCotosRuta.push({ nombre: nombreCyl, peligro: activoCyl, sinTabla: Object.keys(cotosActivosCyl).length === 0 });
+        if (activoCyl) {
+          zonasAfectadas.push(nombreCyl);
           L.geoJSON(layer.feature, { style: { color: '#ef4444', weight: 4, fillColor: '#ef4444', fillOpacity: 0.35 } }).addTo(capaPeligroGpx);
         }
       }
     });
   }
 
-  // Comprobar si la ruta sale fuera de todos los mapas cargados
   var saleDeCotos = false;
   if (todosLosPoligonos.length > 0) {
     var paso = Math.max(1, Math.floor(coords.length / 80));
@@ -1390,6 +1402,106 @@ function actualizarCapasVisibles() {
   }
 
   if (window.coordsRutaActual) evaluarRutaGpx();
+}
+
+// Mostrar el botón de descarga cada vez que se evalúa un GPX
+var evaluarConBoton = evaluarRutaGpx;
+evaluarRutaGpx = function() {
+  evaluarConBoton();
+  var btnDesc = document.getElementById('btnDescargarFicha');
+  if (btnDesc && window.coordsRutaActual && window.coordsRutaActual.length > 0) {
+    btnDesc.style.display = 'block';
+  }
+};
+
+function descargarFichaRuta() {
+  var cotos = window.resumenCotosRuta || [];
+  var infoEl = document.getElementById('infoGpx');
+  var nombreRuta = infoEl ? infoEl.innerText.replace('Ruta cargada:', '').trim() : 'Ruta GPX';
+  var elFecha = document.getElementById('selFecha');
+  var fechaTxt = (elFecha && elFecha.value) ? elFecha.options[elFecha.selectedIndex].text : 'Fecha según tabla CyL / Sin filtrar';
+
+  var hayPeligro = cotos.some(function(c) { return c.peligro; });
+  var faltaTabla = cotos.some(function(c) { return c.sinTabla; });
+
+  var canvas = document.createElement('canvas');
+  var ancho = 720;
+  var altoBase = 290;
+  var altoLinea = 36;
+  var alto = altoBase + Math.max(1, cotos.length) * altoLinea;
+  canvas.width = ancho;
+  canvas.height = alto;
+  var ctx = canvas.getContext('2d');
+
+  // Fondo blanco
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, ancho, alto);
+
+  // Cabecera
+  ctx.fillStyle = hayPeligro ? '#dc2626' : (faltaTabla ? '#d97706' : '#16a34a');
+  ctx.fillRect(0, 0, ancho, 85);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 24px Arial, sans-serif';
+  var tituloEstado = hayPeligro ? '🚨 ALERTA: RUTA CON CAZA ACTIVA' : (faltaTabla ? '⚠️ PRECAUCIÓN: FALTA TABLA DE CyL' : '✅ RUTA LIBRE DE CAZA');
+  ctx.fillText(tituloEstado, 28, 42);
+
+  ctx.font = '15px Arial, sans-serif';
+  ctx.fillText('Informe de Seguridad Cinegética - Cantabria, Burgos y Palencia', 28, 68);
+
+  // Datos de la ruta
+  ctx.fillStyle = '#1e293b';
+  ctx.font = 'bold 16px Arial, sans-serif';
+  ctx.fillText('Ruta:', 28, 122);
+  ctx.font = '16px Arial, sans-serif';
+  ctx.fillText(nombreRuta.substring(0, 58), 85, 122);
+
+  ctx.font = 'bold 16px Arial, sans-serif';
+  ctx.fillText('Fecha:', 28, 150);
+  ctx.font = '16px Arial, sans-serif';
+  ctx.fillText(fechaTxt, 85, 150);
+
+  // Línea separadora
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(28, 170);
+  ctx.lineTo(ancho - 28, 170);
+  ctx.stroke();
+
+  // Listado de cotos atravesados
+  ctx.fillStyle = '#0f172a';
+  ctx.font = 'bold 16px Arial, sans-serif';
+  ctx.fillText('Cotos y zonas atravesadas por el track (' + cotos.length + '):', 28, 198);
+
+  var y = 230;
+  if (cotos.length === 0) {
+    ctx.fillStyle = '#64748b';
+    ctx.font = 'italic 15px Arial, sans-serif';
+    ctx.fillText('No se han detectado cotos mapeados en el recorrido (o están desmarcados).', 28, y);
+  } else {
+    cotos.forEach(function(item) {
+      ctx.fillStyle = item.peligro ? '#fef2f2' : (item.sinTabla ? '#fffbeb' : '#f0fdf4');
+      ctx.fillRect(28, y - 20, ancho - 56, 28);
+
+      ctx.fillStyle = item.peligro ? '#dc2626' : (item.sinTabla ? '#b45309' : '#15803d');
+      ctx.font = 'bold 14px Arial, sans-serif';
+      var etiqueta = item.peligro ? '[CON CAZA]' : (item.sinTabla ? '[SIN VERIFICAR]' : '[LIBRE]');
+      ctx.fillText(etiqueta + '  ' + item.nombre.substring(0, 55), 36, y);
+      y += altoLinea;
+    });
+  }
+
+  // Pie legal
+  ctx.fillStyle = '#64748b';
+  ctx.font = '11px Arial, sans-serif';
+  ctx.fillText('Exención de responsabilidad: Datos meramente informativos sujetos a cambios oficiales sin previo aviso.', 28, alto - 20);
+
+  // Descargar archivo PNG
+  var enlace = document.createElement('a');
+  enlace.download = 'ficha-ruta-caza.png';
+  enlace.href = canvas.toDataURL('image/png');
+  enlace.click();
 }
 
 
