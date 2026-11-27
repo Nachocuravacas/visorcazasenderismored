@@ -126,7 +126,7 @@
   </div>
 
   <div id="panelCyl" style="display:none;">
-    <h3 style="margin:0 0 10px; font-size:18px; color:#1e293b;">Cotos y Cacerías CyL</h3>
+    <h3 style="margin:0 0 10px; font-size:18px; color:#1e293b;">Cotos y Cacerías Burgos y Palencia</h3>
     
     <div id="msgCyl" style="font-size:12px; margin-bottom:8px; font-weight:bold; color:#2563eb;">Esperando cambio de pestaña...</div>
 
@@ -261,7 +261,7 @@ var capaCotosCantabria = null, capaZonasCantabria = null, dbCantabria = {};
 var capaRutaGpx = null, capaPeligroGpx = null, capaLluviaWMS = null;
 var cacheMeteoCotos = {};
 var cacheLluviaHoraria = null, puntosMallaLluvia = new Array(), timerAnimacionLluvia = null;
-var limitesMallaLluvia = [[42.70, -5.00], [43.60, -3.00]];
+var limitesMallaLluvia = [[41.55, -5.15], [43.60, -2.50]];
 
 function normalizarCantabria(txt) {
   if (!txt) return '';
@@ -833,10 +833,10 @@ function actualizarCapaLluvia() {
   var latMin = minCoord.at(0), lonMin = minCoord.at(1);
   var latMax = maxCoord.at(0), lonMax = maxCoord.at(1);
 
-  for (var r = 0; r < 5; r++) {
-    var lat = latMin + (latMax - latMin) * (r / 4);
-    for (var c = 0; c < 7; c++) {
-      var lon = lonMin + (lonMax - lonMin) * (c / 6);
+  for (var r = 0; r < 7; r++) {
+    var lat = latMin + (latMax - latMin) * (r / 6);
+    for (var c = 0; c < 8; c++) {
+      var lon = lonMin + (lonMax - lonMin) * (c / 7);
       puntosMallaLluvia.push({ lat: Number(lat.toFixed(3)), lon: Number(lon.toFixed(3)) });
     }
   }
