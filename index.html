@@ -1368,45 +1368,13 @@ evaluarRutaGpx = function() {
     }
   }
 };
-
-function actualizarCapasVisibles() {
-  var verCant = document.getElementById('chkCantabria') ? document.getElementById('chkCantabria').checked : true;
-  var verBurgos = document.getElementById('chkBurgos') ? document.getElementById('chkBurgos').checked : false;
-  var verPalencia = document.getElementById('chkPalencia') ? document.getElementById('chkPalencia').checked : false;
-
-  // Mostrar u ocultar Cantabria
-  if (capaCotosCantabria) {
-    if (verCant && !map.hasLayer(capaCotosCantabria)) capaCotosCantabria.addTo(map);
-    if (!verCant && map.hasLayer(capaCotosCantabria)) map.removeLayer(capaCotosCantabria);
-  }
-  if (capaZonasCantabria) {
-    if (verCant && !map.hasLayer(capaZonasCantabria)) {
-      capaZonasCantabria.addTo(map);
-      capaZonasCantabria.bringToFront();
-    }
-    if (!verCant && map.hasLayer(capaZonasCantabria)) map.removeLayer(capaZonasCantabria);
-  }
-
-  // Mostrar u ocultar Burgos / Palencia
-  if (verBurgos || verPalencia) {
-    if (!cylCargado) {
-      cargarCotosCyl(false);
-    } else if (capaCotosCyl) {
-      if (!map.hasLayer(capaCotosCyl)) capaCotosCyl.addTo(map);
-      capaCotosCyl.setStyle(estiloCotoCyl);
-    }
-  } else {
-    if (capaCotosCyl && map.hasLayer(capaCotosCyl)) {
-      map.removeLayer(capaCotosCyl);
-    }
-  }
-
-  if (window.coordsRutaActual) evaluarRutaGpx();
-}
+};
 
 // Mostrar el botón de descarga cada vez que se evalúa un GPX
 var evaluarConBoton = evaluarRutaGpx;
 evaluarRutaGpx = function() {
+  if (typeof cotosActivosCyl === 'undefined') window.cotosActivosCyl = {};
+  if (typeof comunidadActiva === 'undefined') window.comunidadActiva = 'cantabria';
   evaluarConBoton();
   var btnDesc = document.getElementById('btnDescargarFicha');
   if (btnDesc && window.coordsRutaActual && window.coordsRutaActual.length > 0) {
@@ -1433,11 +1401,9 @@ function descargarFichaRuta() {
   canvas.height = alto;
   var ctx = canvas.getContext('2d');
 
-  // Fondo blanco
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, ancho, alto);
 
-  // Cabecera
   ctx.fillStyle = hayPeligro ? '#dc2626' : (faltaTabla ? '#d97706' : '#16a34a');
   ctx.fillRect(0, 0, ancho, 85);
 
@@ -1449,7 +1415,6 @@ function descargarFichaRuta() {
   ctx.font = '15px Arial, sans-serif';
   ctx.fillText('Informe de Seguridad Cinegética - Cantabria, Burgos y Palencia', 28, 68);
 
-  // Datos de la ruta
   ctx.fillStyle = '#1e293b';
   ctx.font = 'bold 16px Arial, sans-serif';
   ctx.fillText('Ruta:', 28, 122);
@@ -1461,7 +1426,6 @@ function descargarFichaRuta() {
   ctx.font = '16px Arial, sans-serif';
   ctx.fillText(fechaTxt, 85, 150);
 
-  // Línea separadora
   ctx.strokeStyle = '#cbd5e1';
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -1469,7 +1433,6 @@ function descargarFichaRuta() {
   ctx.lineTo(ancho - 28, 170);
   ctx.stroke();
 
-  // Listado de cotos atravesados
   ctx.fillStyle = '#0f172a';
   ctx.font = 'bold 16px Arial, sans-serif';
   ctx.fillText('Cotos y zonas atravesadas por el track (' + cotos.length + '):', 28, 198);
@@ -1492,19 +1455,15 @@ function descargarFichaRuta() {
     });
   }
 
-  // Pie legal
   ctx.fillStyle = '#64748b';
   ctx.font = '11px Arial, sans-serif';
   ctx.fillText('Exención de responsabilidad: Datos meramente informativos sujetos a cambios oficiales sin previo aviso.', 28, alto - 20);
 
-  // Descargar archivo PNG
   var enlace = document.createElement('a');
   enlace.download = 'ficha-ruta-caza.png';
   enlace.href = canvas.toDataURL('image/png');
   enlace.click();
 }
-
-
 </script>
 </body>
 </html>
