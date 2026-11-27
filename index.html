@@ -1214,6 +1214,8 @@ evaluarRutaGpx = function() {
   var zonasAfectadas = new Array();
   var todosLosPoligonos = new Array();
 
+  window.resumenCotosRuta = new Array();
+
     // 1. Revisar Cotos de Cantabria
   if (capaCotosCantabria) {
     capaCotosCantabria.eachLayer(function(layer) {
@@ -1463,6 +1465,41 @@ function descargarFichaRuta() {
   enlace.href = canvas.toDataURL('image/png');
   enlace.click();
 }
+
+function actualizarCapasVisibles() {
+  var verCant = document.getElementById('chkCantabria') ? document.getElementById('chkCantabria').checked : true;
+  var verBurgos = document.getElementById('chkBurgos') ? document.getElementById('chkBurgos').checked : false;
+  var verPalencia = document.getElementById('chkPalencia') ? document.getElementById('chkPalencia').checked : false;
+
+  if (capaCotosCantabria) {
+    if (verCant && !map.hasLayer(capaCotosCantabria)) capaCotosCantabria.addTo(map);
+    if (!verCant && map.hasLayer(capaCotosCantabria)) map.removeLayer(capaCotosCantabria);
+  }
+  if (capaZonasCantabria) {
+    if (verCant && !map.hasLayer(capaZonasCantabria)) {
+      capaZonasCantabria.addTo(map);
+      capaZonasCantabria.bringToFront();
+    }
+    if (!verCant && map.hasLayer(capaZonasCantabria)) map.removeLayer(capaZonasCantabria);
+  }
+
+  if (verBurgos || verPalencia) {
+    if (!cylCargado) {
+      cargarCotosCyl(false);
+    } else if (capaCotosCyl) {
+      if (!map.hasLayer(capaCotosCyl)) capaCotosCyl.addTo(map);
+      capaCotosCyl.setStyle(estiloCotoCyl);
+    }
+  } else {
+    if (capaCotosCyl && map.hasLayer(capaCotosCyl)) {
+      map.removeLayer(capaCotosCyl);
+    }
+  }
+
+  if (window.coordsRutaActual) evaluarRutaGpx();
+}
+
+
 </script>
 </body>
 </html>
