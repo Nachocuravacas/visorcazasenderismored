@@ -160,7 +160,7 @@
       </div>
       <div style="display:flex; align-items:center;">
         <span style="display:inline-block; width:12px; height:12px; background:rgba(100,116,139,0.08); border:1px solid #64748b; margin-right:6px;"></span>
-        <span>Resto de cotos (Burgos, Palencia y León)</span>
+        <span>Resto de cotos (Burgos, Palencia)</span>
       </div>
     </div>
   </div>
@@ -1067,8 +1067,8 @@ function cambiarComunidad(com) {
     if (!cylCargado) {
       cargarCotosCyl(true);
     }
-    actualizarCapasVisibles();
-    map.setView([42.35, -2.70], 8);
+      actualizarCapasVisibles();
+    map.setView([42.95, -3.65], 9);
   } else {
     if (btnCant) { btnCant.style.background = '#2563eb'; btnCant.style.color = '#ffffff'; }
     if (btnCyl) { btnCyl.style.background = 'transparent'; btnCyl.style.color = '#475569'; }
