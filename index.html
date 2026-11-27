@@ -1064,6 +1064,9 @@ function cambiarComunidad(com) {
     if (pCant) pCant.style.display = 'none';
     if (pCyl) pCyl.style.display = 'block';
 
+    if (!cylCargado) {
+      cargarCotosCyl(true);
+    }
     actualizarCapasVisibles();
     map.setView([42.35, -4.30], 8);
   } else {
