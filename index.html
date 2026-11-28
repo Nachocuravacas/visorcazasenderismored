@@ -154,6 +154,10 @@
 
     <textarea id="txtTablaCyl" rows="4" placeholder="Copia y pega aquí las filas de la web de la Junta..." style="width:100%; padding:7px; border-radius:4px; border:1px solid #cbd5e1; font-size:11px; font-family:sans-serif; box-sizing:border-box; resize:vertical;"></textarea>
 
+    <button type="button" onclick="pegarDesdePortapapeles()" style="width:100%; margin-top:6px; padding:7px; background:#f1f5f9; color:#1e293b; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">
+      📋 Pegar texto copiado (Móvil)
+    </button>
+
     <button type="button" onclick="procesarTablaCyl()" style="width:100%; margin-top:8px; padding:9px; background:#2563eb; color:#ffffff; border:none; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(37,99,235,0.3);">MOSTRAR COTOS EN EL MAPA</button>
 
     <div style="margin-top:10px; padding-top:8px; border-top:1px solid #eee; font-size:11px; color:#334155;">
@@ -1497,6 +1501,30 @@ function actualizarCapasVisibles() {
   }
 
   if (window.coordsRutaActual) evaluarRutaGpx();
+}
+
+function pegarDesdePortapapeles() {
+  var caja = document.getElementById('txtTablaCyl');
+  if (!navigator.clipboard || !navigator.clipboard.readText) {
+    alert('Tu navegador no permite pegar con botón. Toca dentro del cuadro blanco y usa el botón Pegar de tu teclado.');
+    if (caja) caja.focus();
+    return;
+  }
+  navigator.clipboard.readText()
+    .then(function(texto) {
+      if (!texto || texto.trim() === '') {
+        alert('El portapapeles está vacío. Asegúrate de haber copiado primero las filas en la web de la Junta.');
+        return;
+      }
+      if (caja) {
+        caja.value = texto;
+        procesarTablaCyl();
+      }
+    })
+    .catch(function() {
+      alert('Permiso denegado para leer el portapapeles. Toca dentro del cuadro blanco y usa la tecla Pegar de la barra superior de tu teclado.');
+      if (caja) caja.focus();
+    });
 }
 
 
